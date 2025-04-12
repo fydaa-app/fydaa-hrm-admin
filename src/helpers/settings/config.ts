@@ -1,0 +1,50 @@
+export const ENV = process.env.NEXT_PUBLIC_ENV || process.env.ENV
+export const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || process.env.APP_DOMAIN
+
+interface IValues {
+    INTERNAL_SERVICE: string
+    AUTH_SERVICE: string
+    API_SERVICE: string // Added for the new API service base URL
+    HEIRARCHY_SERVICE: string
+    EMPLOYEE_SERVICE: string, 
+    GOALSHEET_SERVICE: string, 
+    TRANSACTION_SERVICE: string,
+}
+
+interface ISettings {
+    dev: IValues
+    beta: IValues
+    prod: IValues
+}
+
+const envSettingsMap: ISettings = {
+    dev: {
+        INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
+        AUTH_SERVICE: 'http://localhost:3005', // Changed to match the new login URL port
+        API_SERVICE: 'http://localhost:8000', // Separate base URL for other API calls
+        HEIRARCHY_SERVICE: 'http://localhost:8000/hierarchy',
+        EMPLOYEE_SERVICE: 'http://localhost:8000/users', 
+        GOALSHEET_SERVICE: 'http://localhost:8000/goal-sheet', 
+        TRANSACTION_SERVICE: 'https://stocktransaction-stage.fydaa.com', 
+    },
+    beta: {
+        INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
+        AUTH_SERVICE: 'https://referral.fydaa.in', // Removed /auth/signin to match the new URL structure
+        API_SERVICE: 'https://referral.fydaa.in',
+        HEIRARCHY_SERVICE: 'https://referral.fydaa.in/api',
+        EMPLOYEE_SERVICE: 'http://localhost:8000/user', 
+        GOALSHEET_SERVICE: 'http://localhost:8000/goal-sheet', 
+        TRANSACTION_SERVICE: 'https://stocktransaction-stage.fydaa.com', 
+    },
+    prod: {
+        INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
+        AUTH_SERVICE: 'https://crm-prod.fydaa.com', // Removed /api to match the new URL structure
+        API_SERVICE: 'https://referral.fydaa.com/api',
+        HEIRARCHY_SERVICE: 'https://referral.fydaa.com/api',
+        EMPLOYEE_SERVICE: 'https://crm-prod.fydaa.com', 
+        GOALSHEET_SERVICE: 'http://localhost:8000/goal-sheet', 
+        TRANSACTION_SERVICE: 'https://stocktransaction-stage.fydaa.com', 
+    },
+}
+
+export const settings = envSettingsMap[ENV as keyof ISettings]
