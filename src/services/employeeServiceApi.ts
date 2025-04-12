@@ -38,13 +38,9 @@ export interface CreateEmployeeRequest {
 }
 
 export interface PaginationData {
-  pageSize: number;
-  pageNumber: number;
-  query?: string;
-  queryFields?: string;
-  filter?: string;
-  filterFields?: string;
-  aggregation?: boolean;
+  page: number,
+  search?: string,
+  
 }
 
 class EmployeeServiceApi extends API {
@@ -59,24 +55,9 @@ class EmployeeServiceApi extends API {
     });
    
   }
-  
+
   async getEmployee(data: PaginationData): Promise<APIResponse> {
-    return this.get(
-      ApiType.private,
-      `${this.baseUrl}/searchAndPaginate`,
-      {},
-      {
-        params: {
-          pageSize: +data.pageSize,
-          pageNumber: +data.pageNumber,
-          query: data.query,
-          queryFields: data.queryFields,
-          filter: data.filter,
-          filterFields: data.filterFields,
-          aggregation: data.aggregation,
-        },
-      }
-    );
+      return this.get(ApiType.private, `${this.baseUrl}/referrals/employee-list?page=${data.page}&search=${data.search}`)
   }
 
   async getHierarchies(): Promise<APIResponse> {
