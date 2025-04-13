@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
-import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import Input from '@/components/form/input/InputField';
@@ -8,7 +7,7 @@ import Select from '@/components/form/Select';
 import Label from "@/components/form/Label";
 import { 
     CreateEmployeeRequest,
-  employeeServiceApi
+    employeeServiceApi
 } from "@/services/employeeServiceApi";
 
 interface CreateEmployeeProps {
@@ -16,40 +15,50 @@ interface CreateEmployeeProps {
   onClose: () => void;
 }
 
-const DEFAULT_EMPLOYEE_DATA: CreateEmployeeRequest = {
-    name: "",
-    mobileNumber: "",
-    email: "",
-    managerId: undefined,
-    level: 0,
-    role: ""
+interface Manager {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface Hierarchy {
+  level: number;
+  hierarchyName: string;
+}
+
+// Define API response types
+interface HierarchyResponse {
+  data: {
+    data: Hierarchy[];
   };
+}
 
-const useDebounce = (value: string, delay: number) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+interface ManagerResponse {
+  data: Manager[];
+}
 
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedValue;
+const DEFAULT_EMPLOYEE_DATA: CreateEmployeeRequest = {
+  name: "",
+  mobileNumber: "",
+  email: "",
+  managerId: undefined,
+  level: 0,
+  role: ""
 };
 
 export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps) {
   const router = useRouter();
   const [employeeMetadata, setEmployeeMetadata] = useState<CreateEmployeeRequest>(DEFAULT_EMPLOYEE_DATA);
-  const [hierarchies, setHierarchies] = useState<any[]>([]);
-  const [managerResults, setManagerResults] = useState<any>([]);
+  const [hierarchies, setHierarchies] = useState<Hierarchy[]>([]);
+  const [managerResults, setManagerResults] = useState<Manager[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const fetchHierarchies = useCallback(async () => {
     try {
-      const response = await employeeServiceApi.getHierarchies();
-      console.log(response.data.data);
+      const response = await employeeServiceApi.getHierarchies() as HierarchyResponse;
       setHierarchies(response.data.data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch hierarchies');
     }
   }, []);
@@ -58,19 +67,22 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
     if (!employeeMetadata.level) return;
     
     try {
-      const managers = await employeeServiceApi.searchManagers({level:employeeMetadata.level}); 
+      const managers = await employeeServiceApi.searchManagers({ level: employeeMetadata.level }) as ManagerResponse; 
       setManagerResults(managers.data);       
-      
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch managers');
     }
-
   }, [employeeMetadata.level]);
 
   useEffect(() => {
     if (isOpen) fetchHierarchies();
   }, [isOpen, fetchHierarchies]);
 
+  useEffect(() => {
+    if (employeeMetadata.level) {
+      fetchManagers();
+    }
+  }, [employeeMetadata.level, fetchManagers]);
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -89,16 +101,16 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
     if (!validateForm()) return;
 
     try {
-        await employeeServiceApi.createEmployee({
-          ...employeeMetadata,
-          role: employeeMetadata.level.toString(),
-        });        
-        toast.success('Employee created successfully');
-        router.refresh();
-        closeModal();
-      } catch (error) {
-        toast.error('Failed to create employee');
-      }
+      await employeeServiceApi.createEmployee({
+        ...employeeMetadata,
+        role: employeeMetadata.level.toString(),
+      });        
+      toast.success('Employee created successfully');
+      router.refresh();
+      closeModal();
+    } catch {
+      toast.error('Failed to create employee');
+    }
   };
 
   const closeModal = () => {
@@ -134,7 +146,9 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 ...prev,
                 name: e.target.value
               }))}
+              error={!!errors.name}
             />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
 
           <div>
@@ -147,7 +161,9 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 ...prev,
                 email: e.target.value
               }))}
+              error={!!errors.email}
             />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
 
           <div>
@@ -159,26 +175,27 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 ...prev,
                 mobileNumber: e.target.value
               }))}
+              error={!!errors.phone}
             />
+            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
           </div>
 
           <div>
             <Label htmlFor="level">Level *</Label>
             <Select
-              id="level"
-              value={employeeMetadata.level}
-              onChange={(e) => setEmployeeMetadata(prev => ({
+              onChange={(value: string) => setEmployeeMetadata(prev => ({
                 ...prev,
-                level: Number(e.target.value),
+                level: Number(value),
                 managerId: undefined
               }))}
-              options={[              
-                ...hierarchies.map(h => ({
-                  value: h.level,
-                  label: `${h.hierarchyName} | Level ${h.level}`
-                }))
-              ]}
+              defaultValue={employeeMetadata.level.toString()}
+              options={hierarchies.map(h => ({
+                value: h.level.toString(),
+                label: `${h.hierarchyName} | Level ${h.level}`
+              }))}
+              placeholder="Select a level"
             />
+            {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
           </div>
 
           <div>
@@ -190,17 +207,19 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search managers..."
                 disabled={!employeeMetadata.level}
+                error={!!errors.manager}
               />
+              {errors.manager && <p className="text-red-500 text-sm mt-1">{errors.manager}</p>}
               
               {managerResults.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
-                  {managerResults.map(manager => (
+                  {managerResults.map((manager: Manager) => (
                     <button
                       key={manager.id}
                       type="button"
                       className="w-full p-2 text-left hover:bg-gray-100"
                       onClick={() => {
-                        setEmployeeMetadata(prev => ({
+                        setEmployeeMetadata((prev: CreateEmployeeRequest): CreateEmployeeRequest => ({
                           ...prev,
                           managerId: manager.id
                         }));

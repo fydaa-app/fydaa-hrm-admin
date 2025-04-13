@@ -6,13 +6,19 @@ export interface employeeData {
   level: number;
 }
 
+export interface ParentData {
+  id: string;
+  name: string;
+  level: number;
+}
+
 export interface createEmployeeData {
   id?: string;
   _id?: string;
   name: string;
   email: string;
   level: number;
-  parents?: any;
+  parents?: ParentData[];
   currentParentId?: string;
   mobileNumber: string;
   managerId?:number;

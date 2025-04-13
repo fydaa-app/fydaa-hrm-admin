@@ -5,7 +5,6 @@ import EmployeeTable from "@/components/employee/EmployeeTable";
 // import { Metadata } from "next";
 import React ,  { useState } from "react";
 import CreateEmployee from '@/components/employee/CreateEmployee';
-import { useModal } from "@/hooks/useModal";
 // export const metadata: Metadata = {
 //   title: "Employee | Fydaa",
 //   description:
