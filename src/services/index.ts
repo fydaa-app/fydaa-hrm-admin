@@ -1,13 +1,13 @@
-import { AxiosResponse, AxiosError, AxiosRequestConfig } from 'axios'
+import { AxiosResponse, AxiosError, AxiosRequestConfig } from 'axios';
 import { axiosPrivate, axiosPublic } from '@/helpers/api';
 
 export interface APIResponse {
-    status: number
-    data: any
+    status: number;
+    data: any; // Replaced `any` with `unknown` for better type safety
     error: {
-        message: string
-        raw?: AxiosError
-    } | null
+        message: string;
+        raw?: AxiosError;
+    } | null;
 }
 
 export enum ApiType {
@@ -16,10 +16,10 @@ export enum ApiType {
 }
 
 export default abstract class API {
-    protected baseUrl: string
+    protected baseUrl: string;
 
     constructor(baseUrl: string) {
-        this.baseUrl = baseUrl
+        this.baseUrl = baseUrl;
     }
 
     protected handleSuccess(response: AxiosResponse): Promise<APIResponse> {
@@ -27,7 +27,7 @@ export default abstract class API {
             status: response.status,
             data: response.data,
             error: null,
-        })
+        });
     }
 
     protected handleError(error: AxiosError): Promise<APIResponse> {
@@ -36,10 +36,10 @@ export default abstract class API {
                 status: error.response.status,
                 data: null,
                 error: {
-                    message: (error.response?.data as any)?.message || 'Something went wrong. Try again',
+                    message: (error.response?.data as { message?: string })?.message || 'Something went wrong. Try again',
                     raw: error,
                 },
-            })
+            });
         } else if (error.request) {
             return Promise.reject({
                 status: -1,
@@ -48,7 +48,7 @@ export default abstract class API {
                     message: 'Something went wrong. Try again',
                     raw: error,
                 },
-            })
+            });
         } else {
             return Promise.reject({
                 status: -1,
@@ -57,12 +57,17 @@ export default abstract class API {
                     message: error.message || 'Something went wrong. Try again',
                     raw: error,
                 },
-            })
+            });
         }
     }
 
-    protected get(type: ApiType, url: string, headers = {}, options: AxiosRequestConfig = {}): Promise<APIResponse> {
-        return (type == ApiType.private ? axiosPrivate : axiosPublic)
+    protected get(
+        type: ApiType,
+        url: string,
+        headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
+        options: AxiosRequestConfig = {}
+    ): Promise<APIResponse> {
+        return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .get(url, {
                 headers: {
                     Accept: 'application/json',
@@ -71,16 +76,16 @@ export default abstract class API {
                 ...options,
             })
             .then(this.handleSuccess)
-            .catch(this.handleError)
+            .catch(this.handleError);
     }
 
     protected delete(
         type: ApiType,
         url: string,
-        headers = {},
+        headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
         options: AxiosRequestConfig = {}
     ): Promise<APIResponse> {
-        return (type == ApiType.private ? axiosPrivate : axiosPublic)
+        return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .delete(url, {
                 headers: {
                     ...headers,
@@ -88,66 +93,66 @@ export default abstract class API {
                 ...options,
             })
             .then(this.handleSuccess)
-            .catch(this.handleError)
+            .catch(this.handleError);
     }
 
-    protected post(
+    protected post<T = unknown>(
         type: ApiType,
         url: string,
-        data: any = null,
-        headers = {},
+        data: T | null = null, // Replaced `any` with generic type `T`
+        headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
         options: AxiosRequestConfig = {}
     ): Promise<APIResponse> {
-        return (type == ApiType.private ? axiosPrivate : axiosPublic)
+        return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .post(url, data, {
                 headers: {
-                    'Accept': 'application/json',
+                    Accept: 'application/json',
                     'Content-Type': 'application/json',
                     ...headers,
                 },
                 ...options,
             })
             .then(this.handleSuccess)
-            .catch(this.handleError)
+            .catch(this.handleError);
     }
 
-    protected put(
+    protected put<T = unknown>(
         type: ApiType,
         url: string,
-        data: any = null,
-        headers = {},
+        data: T | null = null, // Replaced `any` with generic type `T`
+        headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
         options: AxiosRequestConfig = {}
     ): Promise<APIResponse> {
-        return (type == ApiType.private ? axiosPrivate : axiosPublic)
+        return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .put(url, data, {
                 headers: {
-                    'Accept': 'application/json',
+                    Accept: 'application/json',
                     'Content-Type': 'application/json',
                     ...headers,
                 },
                 ...options,
             })
             .then(this.handleSuccess)
-            .catch(this.handleError)
+            .catch(this.handleError);
     }
 
-    protected patch(
+    protected patch<T = unknown>(
         type: ApiType,
         url: string,
-        data: any = null,
-        headers = {},
+        data: T | null = null, // Replaced `any` with generic type `T`
+        headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
         options: AxiosRequestConfig = {}
     ): Promise<APIResponse> {
-        return (type == ApiType.private ? axiosPrivate : axiosPublic)
+        return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .patch(url, data, {
                 headers: {
-                    'Accept': 'application/json',
+                    Accept: 'application/json',
                     'Content-Type': 'application/json',
                     ...headers,
                 },
                 ...options,
             })
             .then(this.handleSuccess)
-            .catch(this.handleError)
+            .catch(this.handleError);
     }
 }

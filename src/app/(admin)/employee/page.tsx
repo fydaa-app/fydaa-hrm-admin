@@ -30,8 +30,7 @@ async function fetchEmployees(
     const response = await employeeServiceApi.getEmployee({
       page,      
       search: searchQuery,
-    });    
-    console.log(response);
+    });        
     return {
       employees: response.data.data.employees,
       totalCount: response.data.data.totalcount,

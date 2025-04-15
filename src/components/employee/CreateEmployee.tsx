@@ -49,7 +49,7 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
     try {
       const response = await employeeServiceApi.getHierarchies();
       setHierarchies(response.data.data);
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch hierarchies');
     }
   }, []);
@@ -172,6 +172,7 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 ...prev,
                 name: e.target.value
               }))}
+              error={!!errors.name}
             />
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
@@ -186,6 +187,7 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 ...prev,
                 email: e.target.value
               }))}
+              error={!!errors.email}
             />
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
@@ -214,6 +216,7 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 }))
               ]}
             />
+            {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
           </div>
 
           <div>
@@ -225,6 +228,7 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 onChange={handleManagerSearch}
                 placeholder={employeeMetadata.level ? "Search managers..." : "Select level first"}
                 disabled={!employeeMetadata.level}
+                error={!!errors.manager}
               />
               {isLoadingManagers && (
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -240,7 +244,7 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                       type="button"
                       className="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
                       onClick={() => {
-                        setEmployeeMetadata(prev => ({
+                        setEmployeeMetadata((prev: CreateEmployeeRequest): CreateEmployeeRequest => ({
                           ...prev,
                           managerId: manager.id
                         }));
