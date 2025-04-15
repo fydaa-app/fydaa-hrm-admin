@@ -48,7 +48,7 @@ class EmployeeServiceApi extends API {
   async createEmployee(data: CreateEmployeeRequest): Promise<APIResponse> {    
     return this.post(ApiType.private, `${this.baseUrl}/referrals/create-employee`, {
       name: data.name,
-      role: data.level.toString(),
+      role: data.role,
       managerId:data.managerId,
       mobileNumber: data.mobileNumber,
       email: data.email
