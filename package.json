@@ -22,6 +22,7 @@
     "@tailwindcss/postcss": "^4.0.9",
     "apexcharts": "^4.3.0",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.5.0",
     "cookies-next": "^5.1.0",
     "flatpickr": "^4.6.13",
     "js-cookie": "^3.0.5",
