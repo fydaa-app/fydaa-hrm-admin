@@ -3,7 +3,7 @@ import { axiosPrivate, axiosPublic } from '@/helpers/api';
 
 export interface APIResponse {
     status: number;
-    data: unknown; // Replaced `any` with `unknown` for better type safety
+    data: any; // Replaced `any` with `unknown` for better type safety
     error: {
         message: string;
         raw?: AxiosError;

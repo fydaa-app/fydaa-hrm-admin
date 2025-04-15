@@ -26,17 +26,6 @@ interface Hierarchy {
   hierarchyName: string;
 }
 
-// Define API response types
-interface HierarchyResponse {
-  data: {
-    data: Hierarchy[];
-  };
-}
-
-interface ManagerResponse {
-  data: Manager[];
-}
-
 const DEFAULT_EMPLOYEE_DATA: CreateEmployeeRequest = {
   name: "",
   mobileNumber: "",
@@ -53,26 +42,32 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
   const [managerResults, setManagerResults] = useState<Manager[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoadingManagers, setIsLoadingManagers] = useState(false);
+  const [isLoadinbutton, setIsLoadingbutton] = useState(false);
   
   const fetchHierarchies = useCallback(async () => {
     try {
-      const response = await employeeServiceApi.getHierarchies() as HierarchyResponse;
+      const response = await employeeServiceApi.getHierarchies();
       setHierarchies(response.data.data);
     } catch {
       toast.error('Failed to fetch hierarchies');
     }
   }, []);
 
-  const fetchManagers = useCallback(async () => {
-    if (!employeeMetadata.level) return;
+  const fetchManagers = useCallback(async (level: number) => {
+    if (!level) return;
     
     try {
-      const managers = await employeeServiceApi.searchManagers({ level: employeeMetadata.level }) as ManagerResponse; 
-      setManagerResults(managers.data);       
-    } catch {
+      setIsLoadingManagers(true);
+      const response = await employeeServiceApi.searchManagers({ level });
+      setManagerResults(response.data);
+      setSearchQuery(""); // Reset search query when level changes
+    } catch (error) {
       toast.error('Failed to fetch managers');
+    } finally {
+      setIsLoadingManagers(false);
     }
-  }, [employeeMetadata.level]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) fetchHierarchies();
@@ -80,7 +75,7 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
 
   useEffect(() => {
     if (employeeMetadata.level) {
-      fetchManagers();
+      fetchManagers(employeeMetadata.level);
     }
   }, [employeeMetadata.level, fetchManagers]);
   
@@ -99,17 +94,23 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+    setIsLoadingbutton(true);
     try {
       await employeeServiceApi.createEmployee({
         ...employeeMetadata,
         role: employeeMetadata.level.toString(),
-      });        
+      });     
+       
       toast.success('Employee created successfully');
       router.refresh();
       closeModal();
-    } catch {
+    } catch (error) {
+      console.log(error);  
+      // setErrors(error.message);
+      closeModal();
       toast.error('Failed to create employee');
+    } finally{
+      setIsLoadingbutton(false);
     }
   };
 
@@ -119,6 +120,31 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
     setManagerResults([]);
     setErrors({});
     onClose();
+  };
+
+  const handleLevelChange = (e: string) => {
+    const level = Number(e);
+    setEmployeeMetadata(prev => ({
+      ...prev,
+      level,
+      managerId: undefined // Reset manager when level changes
+    }));
+  };
+
+  const handleManagerSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!employeeMetadata.level) return;
+    
+    try {
+      setIsLoadingManagers(true);
+      const response = await employeeServiceApi.searchManagers({
+        level: employeeMetadata.level
+      });
+      setManagerResults(response.data);
+    } catch (error) {
+      toast.error('Failed to search managers');
+    } finally {
+      setIsLoadingManagers(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -175,25 +201,20 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 ...prev,
                 mobileNumber: e.target.value
               }))}
-              error={!!errors.phone}
-            />
-            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+            />           
           </div>
 
           <div>
             <Label htmlFor="level">Level *</Label>
             <Select
-              onChange={(value: string) => setEmployeeMetadata(prev => ({
-                ...prev,
-                level: Number(value),
-                managerId: undefined
-              }))}
-              defaultValue={employeeMetadata.level.toString()}
-              options={hierarchies.map(h => ({
-                value: h.level.toString(),
-                label: `${h.hierarchyName} | Level ${h.level}`
-              }))}
-              placeholder="Select a level"
+              defaultValue={String(employeeMetadata.level) || ""}
+              onChange={handleLevelChange}
+              options={[               
+                ...hierarchies.map(h => ({
+                  value: h.level,
+                  label: `${h.hierarchyName} | Level ${h.level}`
+                }))
+              ]}
             />
             {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
           </div>
@@ -204,20 +225,24 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
               <Input
                 id="manager"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search managers..."
+                onChange={handleManagerSearch}
+                placeholder={employeeMetadata.level ? "Search managers..." : "Select level first"}
                 disabled={!employeeMetadata.level}
                 error={!!errors.manager}
               />
-              {errors.manager && <p className="text-red-500 text-sm mt-1">{errors.manager}</p>}
+              {isLoadingManagers && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                </div>
+              )}
               
-              {managerResults.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
-                  {managerResults.map((manager: Manager) => (
+              {!isLoadingManagers && managerResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                  {managerResults.map(manager => (
                     <button
                       key={manager.id}
                       type="button"
-                      className="w-full p-2 text-left hover:bg-gray-100"
+                      className="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
                       onClick={() => {
                         setEmployeeMetadata((prev: CreateEmployeeRequest): CreateEmployeeRequest => ({
                           ...prev,
@@ -233,17 +258,19 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
                 </div>
               )}
             </div>
+            {errors.manager && <p className="text-red-500 text-sm mt-1">{errors.manager}</p>}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={closeModal}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-600 dark:text-white"
             >
               Cancel
             </button>
             <button
+              disabled = {isLoadinbutton}
               type="submit"
               className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >

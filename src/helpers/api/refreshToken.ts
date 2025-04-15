@@ -5,7 +5,7 @@ import { storageService } from "../storage";
 
 // Define the structure of the session object
 interface Session {
-  accessToken: string;
+  token: string;
   refreshToken: string;
 }
 
@@ -17,7 +17,7 @@ const refreshTokenFn = async () => {
       {},
       {
         headers: {
-          Authorization: `Bearer ${session?.accessToken}`, // Add "Bearer" prefix for consistency
+          Authorization: `Bearer ${session?.token}`, // Add "Bearer" prefix for consistency
         },
       }
     );

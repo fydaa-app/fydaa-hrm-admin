@@ -1,133 +1,128 @@
 "use client";
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import CreateEmployee from '@/components/employee/CreateEmployee';
-import EmployeeTable from "@/components/employee/EmployeeTable";
+import HierarchyTable from "@/components/hierarchy/HierarchyTable";
 import Pagination from "@/components/tables/Pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { employeeServiceApi } from "@/services/employeeServiceApi";
+import { hierarchyServiceApi } from "@/services/hierarchyServiceApi";
 
-interface EmployeeList {
-  name: string;
-  mobileNumber: string;
-  email:string;
-  role:string;
-  managerName:string;
+interface HierarchyList {
+  hierarchyName: string;
+  level: number;
 }
 
-async function fetchEmployees(
+async function fetchHierarchies(
   page: number,
   searchQuery: string = ""
 ): Promise<{
-  employees: EmployeeList[];
+  hierarchies: HierarchyList[];
   error: string | null;
   totalCount: number;
   totalPages: number;
 }> {
   try {
-    const response = await employeeServiceApi.getEmployee({
+    const response = await hierarchyServiceApi.getHierarchy({
       page,      
       search: searchQuery,
-    });        
+    });    
     return {
-      employees: response.data.data.employees,
+      hierarchies: response.data.data.hierarchies,
       totalCount: response.data.data.totalcount,
       totalPages: response.data.data.totalPages,
       error: null,
     };
   } catch (error: any) {
-    toast.error(error.message || "Failed to fetch employees");
+    toast.error(error.message || "Failed to fetch hierarchies");
     return {
-      employees: [],
+      hierarchies: [],
       totalCount: 0,
       totalPages: 0,
-      error: error.message || "Failed to fetch employees",
+      error: error.message || "Failed to fetch hierarchies",
     };
   }
 }
 
+export default function HierarchyListPage() {
+  const [hierarchies, setHierarchies] = useState<HierarchyList[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
-export default function EmployeeListPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [employees, setEmployees] = useState<EmployeeList[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isSearching, setIsSearching] = useState(false);
-  
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const inputRef = useRef<HTMLInputElement>(null);
-  
-    useEffect(() => {
-      const query = searchParams.get("search") || "";
-      setSearchQuery(query);
-    }, [searchParams]);
-  
-    const fetchData = useCallback(async () => {
-      try {
-        setIsSearching(true);
-        const { employees, error, totalCount, totalPages } =
-          await fetchEmployees(page, searchQuery);
-  
-        setEmployees(employees);
-        setError(error);
-        setTotalCount(totalCount);
-        setTotalPages(totalPages);
-      } catch (err) {
-        console.error("Error in fetchData:", err);
-        setError("Failed to load data");
-      } finally {
-        setIsSearching(false);
-      }
-    }, [page, searchQuery]);
-  
-    useEffect(() => {
-      fetchData();
-    }, [fetchData]);
-  
-    const handlePageChange = (newPage: number) => {
-      setPage(newPage);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const query = searchParams.get("search") || "";
+    setSearchQuery(query);
+  }, [searchParams]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setIsSearching(true);
+      const { hierarchies, error, totalCount, totalPages } =
+        await fetchHierarchies(page, searchQuery);
+
+      setHierarchies(hierarchies);
+      setError(error);
+      setTotalCount(totalCount);
+      setTotalPages(totalPages);
+    } catch (err) {
+      console.error("Error in fetchData:", err);
+      setError("Failed to load data");
+    } finally {
+      setIsSearching(false);
+    }
+  }, [page, searchQuery]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    } else {
+      params.delete("search");
+    }
+    
+    router.push(`?${params.toString()}`, { scroll: false });
+    setPage(1);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+      event.preventDefault();
+      inputRef.current?.focus();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  
-    const handleSearch = (e: React.FormEvent) => {
-      e.preventDefault();
-      const params = new URLSearchParams();
-      
-      if (searchQuery) {
-        params.set("search", searchQuery);
-      } else {
-        params.delete("search");
-      }
-      
-      router.push(`?${params.toString()}`, { scroll: false });
-      setPage(1);
-    };
-  
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
-        event.preventDefault();
-        inputRef.current?.focus();
-      }
-    };
-  
-    useEffect(() => {
-      document.addEventListener("keydown", handleKeyDown);
-      return () => {
-        document.removeEventListener("keydown", handleKeyDown);
-      };
-    }, []);
+  }, []);
+
   return (
     <div>
-      <PageBreadcrumb pageTitle="Employee" />
+      <PageBreadcrumb pageTitle="Hierarchies" />
       <div className="space-y-6">
-        <ComponentCard title="Employee List">
-        <div className="flex justify-self-end">
-        <form onSubmit={handleSearch}>
+        <ComponentCard title="Hierarchy List">
+          <form onSubmit={handleSearch}>
             <div className="relative search-box">
               <span className="absolute -translate-y-1/2 left-4 top-1/2 pointer-events-none">
                 <svg
@@ -151,7 +146,7 @@ export default function EmployeeListPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search employees..."
+                placeholder="Search hierarchies..."
                 className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-full"
               />
               {isSearching && (
@@ -181,20 +176,8 @@ export default function EmployeeListPage() {
             </div>
           </form>
 
-          <button onClick={() => setIsModalOpen(true)}         
-            className="w-auto inline-flex bg-brand-500 text-white hover:bg-brand-600 
-            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 px-4 py-2 
-            rounded-lg text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed ml-1"
-            >
-            Create New Employee
-          </button>
-        </div>
-
-          <CreateEmployee
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          />
-          <EmployeeTable employees={employees} error={error}/>
+          <HierarchyTable hierarchies={hierarchies} error={error} />
+          
           {totalCount > 0 && (
             <Pagination
               currentPage={page}

@@ -21,11 +21,11 @@ const envSettingsMap: ISettings = {
     dev: {
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
         AUTH_SERVICE: 'http://localhost:3005', // Changed to match the new login URL port
-        API_SERVICE: 'http://localhost:8000', // Separate base URL for other API calls
-        HEIRARCHY_SERVICE: 'http://localhost:8000/hierarchy',
-        EMPLOYEE_SERVICE: 'http://localhost:8000/users', 
-        GOALSHEET_SERVICE: 'http://localhost:8000/goal-sheet', 
-        TRANSACTION_SERVICE: 'https://stocktransaction-stage.fydaa.com', 
+        API_SERVICE: 'http://localhost:3005', // Separate base URL for other API calls
+        HEIRARCHY_SERVICE: 'http://localhost:3005',
+        EMPLOYEE_SERVICE: 'http://localhost:3005', 
+        GOALSHEET_SERVICE: 'http://localhost:3005', 
+        TRANSACTION_SERVICE: 'http://localhost:3005', 
     },
     beta: {
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
@@ -39,11 +39,11 @@ const envSettingsMap: ISettings = {
     prod: {
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
         AUTH_SERVICE: 'https://crm-prod.fydaa.com', // Removed /api to match the new URL structure
-        API_SERVICE: 'https://referral.fydaa.com/api',
-        HEIRARCHY_SERVICE: 'https://referral.fydaa.com/api',
+        API_SERVICE: 'https://crm-prod.fydaa.com',
+        HEIRARCHY_SERVICE: 'https://crm-prod.fydaa.com',
         EMPLOYEE_SERVICE: 'https://crm-prod.fydaa.com', 
-        GOALSHEET_SERVICE: 'http://localhost:8000/goal-sheet', 
-        TRANSACTION_SERVICE: 'https://stocktransaction-stage.fydaa.com', 
+        GOALSHEET_SERVICE: 'https://crm-prod.fydaa.com', 
+        TRANSACTION_SERVICE: 'https://crm-prod.fydaa.com', 
     },
 }
 
