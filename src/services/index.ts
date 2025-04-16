@@ -2,12 +2,12 @@ import { AxiosResponse, AxiosError, AxiosRequestConfig } from 'axios';
 import { axiosPrivate, axiosPublic } from '@/helpers/api';
 
 export interface APIResponse {
-    status: number;
-    data: any; // Replaced `any` with `unknown` for better type safety
+    status: number
+    data: unknown
     error: {
-        message: string;
-        raw?: AxiosError;
-    } | null;
+        message: string
+        raw?: AxiosError
+    } | null
 }
 
 export enum ApiType {

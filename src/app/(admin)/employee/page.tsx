@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef,Suspense } from "react";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import CreateEmployee from '@/components/employee/CreateEmployee';
@@ -17,35 +17,50 @@ interface EmployeeList {
   managerName:string;
 }
 
-async function fetchEmployees(
-  page: number,
-  searchQuery: string = ""
-): Promise<{
+interface EmployeeApiResponse  {
   employees: EmployeeList[];
   error: string | null;
   totalCount: number;
   totalPages: number;
-}> {
+}
+
+async function fetchEmployees(
+  page: number,
+  searchQuery: string = ""
+): Promise<EmployeeApiResponse> {
   try {
     const response = await employeeServiceApi.getEmployee({
       page,      
       search: searchQuery,
     });        
+    const responseData = response.data as {
+      data: {
+        employees: EmployeeList[];
+        totalcount: number;
+        totalPages: number;
+      }
+    };
+
     return {
-      employees: response.data.data.employees,
-      totalCount: response.data.data.totalcount,
-      totalPages: response.data.data.totalPages,
+      employees: responseData.data.employees,
+      totalCount: responseData.data.totalcount,
+      totalPages: responseData.data.totalPages,
       error: null,
     };
-  } catch (error: any) {
-    toast.error(error.message || "Failed to fetch employees");
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to fetch hierarchies";
+        
+    toast.error(errorMessage);
+    
     return {
       employees: [],
-      totalCount: 0,
-      totalPages: 0,
-      error: error.message || "Failed to fetch employees",
+        totalCount: 0,
+        totalPages: 0,
+        error: errorMessage,
     };
-  }
+}
 }
 
 
@@ -126,6 +141,7 @@ export default function EmployeeListPage() {
       <PageBreadcrumb pageTitle="Employee" />
       <div className="space-y-6">
         <ComponentCard title="Employee List">
+        <Suspense fallback={<div>Loading search parameters...</div>}>
         <div className="flex justify-self-end">
         <form onSubmit={handleSearch}>
             <div className="relative search-box">
@@ -202,6 +218,7 @@ export default function EmployeeListPage() {
               onPageChange={handlePageChange}
             />
           )}
+          </Suspense>
         </ComponentCard>
       </div>
     </div>
