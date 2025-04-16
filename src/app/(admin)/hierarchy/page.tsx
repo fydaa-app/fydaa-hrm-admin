@@ -14,35 +14,49 @@ interface HierarchyList {
   level: number;
 }
 
-async function fetchHierarchies(
-  page: number,
-  searchQuery: string = ""
-): Promise<{
+interface HierarchyApiResponse  {
   hierarchies: HierarchyList[];
   error: string | null;
   totalCount: number;
   totalPages: number;
-}> {
+}
+
+async function fetchHierarchies(
+  page: number,
+  searchQuery: string = ""
+): Promise<HierarchyApiResponse> {
   try {
     const response = await hierarchyServiceApi.getHierarchy({
       page,      
       search: searchQuery,
-    });    
-    return {
-      hierarchies: response.data.data.hierarchies,
-      totalCount: response.data.data.totalcount,
-      totalPages: response.data.data.totalPages,
+    });  
+    const responseData = response.data as {
+      data: {
+        hierarchies: HierarchyList[];
+        totalcount: number;
+        totalPages: number;
+      }
+    };
+    return {      
+      hierarchies: responseData.data.hierarchies,
+      totalCount: responseData.data.totalcount,
+      totalPages: responseData.data.totalPages,
       error: null,
     };
-  } catch (error: any) {
-    toast.error(error.message || "Failed to fetch hierarchies");
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to fetch hierarchies";
+        
+    toast.error(errorMessage);
+    
     return {
-      hierarchies: [],
-      totalCount: 0,
-      totalPages: 0,
-      error: error.message || "Failed to fetch hierarchies",
+        hierarchies: [],
+        totalCount: 0,
+        totalPages: 0,
+        error: errorMessage,
     };
-  }
+}
 }
 
 export default function HierarchyListPage() {
