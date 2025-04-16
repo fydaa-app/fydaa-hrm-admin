@@ -48,7 +48,13 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
   const fetchHierarchies = useCallback(async () => {
     try {
       const response = await employeeServiceApi.getHierarchies();
-      setHierarchies(response.data.data);
+      const responseData = response.data as { 
+        data: {
+        level: number;
+        hierarchyName: string;
+      }[]
+    };
+      setHierarchies(responseData.data);
     } catch {
       toast.error('Failed to fetch hierarchies');
     }
@@ -60,9 +66,11 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
     try {
       setIsLoadingManagers(true);
       const response = await employeeServiceApi.searchManagers({ level });
-      setManagerResults(response.data);
+      const responseData = response.data as Manager[]
+      setManagerResults(responseData);
       setSearchQuery(""); // Reset search query when level changes
     } catch (error) {
+      console.error(error)
       toast.error('Failed to fetch managers');
     } finally {
       setIsLoadingManagers(false);
@@ -133,14 +141,16 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
 
   const handleManagerSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!employeeMetadata.level) return;
-    
+    console.log(e);
     try {
       setIsLoadingManagers(true);
       const response = await employeeServiceApi.searchManagers({
         level: employeeMetadata.level
       });
-      setManagerResults(response.data);
+      const responseData = response.data as Manager[]
+      setManagerResults(responseData);
     } catch (error) {
+      console.error(error);      
       toast.error('Failed to search managers');
     } finally {
       setIsLoadingManagers(false);
