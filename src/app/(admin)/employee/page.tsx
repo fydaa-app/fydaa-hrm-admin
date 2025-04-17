@@ -10,11 +10,14 @@ import { toast } from "react-hot-toast";
 import { employeeServiceApi } from "@/services/employeeServiceApi";
 
 interface EmployeeList {
-  name: string;
-  mobileNumber: string;
-  email: string;
-  role: string;
-  managerName: string;
+    id: number;
+    name: string;
+    mobileNumber: string;
+    email:string;
+    role:string;
+    managerName:string;
+    level: number;
+    managerId?: number;
 }
 
 interface EmployeeApiResponse {

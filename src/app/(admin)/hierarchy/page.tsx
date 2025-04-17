@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import CreateHierarchy from '@/components/hierarchy/CreateHierarchy';
 import HierarchyTable from "@/components/hierarchy/HierarchyTable";
 import Pagination from "@/components/tables/Pagination";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,8 +11,12 @@ import { toast } from "react-hot-toast";
 import { hierarchyServiceApi } from "@/services/hierarchyServiceApi";
 
 interface HierarchyList {
+  id: number;
   hierarchyName: string;
   level: number;
+  target: number;
+  totalUsers: number;
+  totalRevenue: number;
 }
 
 interface HierarchyApiResponse {
@@ -168,6 +173,7 @@ function SearchWrapper({ isSearching }: { isSearching: boolean }) {
 
 // Client Component wrapper for the main page that uses searchParams
 function HierarchyListClient() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [hierarchies, setHierarchies] = useState<HierarchyList[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -211,7 +217,21 @@ function HierarchyListClient() {
       <PageBreadcrumb pageTitle="Hierarchies" />
       <div className="space-y-6">
         <ComponentCard title="Hierarchy List">
-          <SearchWrapper isSearching={isSearching} />
+          <div className="flex justify-self-end">
+            <SearchWrapper isSearching={isSearching} />
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="w-auto inline-flex bg-brand-500 text-white hover:bg-brand-600 
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 px-4 py-2 
+              rounded-lg text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed ml-1"
+            >
+              Create New Hierarchy
+            </button>
+          </div>          
+          <CreateHierarchy
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          />
 
           {isSearching ? (
             <div className="flex justify-center py-8">
