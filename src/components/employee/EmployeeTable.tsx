@@ -1,5 +1,4 @@
-// components/tables/TransactionTable.tsx
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -7,22 +6,42 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import DeleteEmployee from '@/components/employee/DeleteEmployee';
+import EditEmployee from "@/components/employee/EditEmployee";
 
 export interface EmployeeTableProps {
   employees: {
+    id: number;
     name: string;
     mobileNumber: string;
     email:string;
     role:string;
     managerName:string;
+    level: number;
+    managerId?: number;
   }[];
   error: string | null;
+}
+
+export interface Employee {
+  id: number;
+  name: string;
+  email: string;
+  mobileNumber: string;
+  level: number;
+  role: string;
+  managerId?: number;
+  managerName:string;
 }
 
 export default function EmployeeTable({ 
   employees = [], 
   error 
 }: EmployeeTableProps) {
+   const [editModalOpen, setEditModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
@@ -47,6 +66,9 @@ export default function EmployeeTable({
                   </TableCell>
                   <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
                     Manager Name
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
+                    Actions
                   </TableCell>
                 </TableRow>
               </TableHeader>
@@ -76,6 +98,28 @@ export default function EmployeeTable({
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {employee.managerName}
                     </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setEditModalOpen(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setDeleteModalOpen(true);
+                          }}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -87,6 +131,23 @@ export default function EmployeeTable({
           )}
         </div>
       </div>
+      {/* Modals */}
+        {selectedEmployee && (
+          <>
+            <EditEmployee
+              isOpen={editModalOpen}
+              onClose={() => setEditModalOpen(false)}
+              employee={selectedEmployee}
+            />
+            
+            <DeleteEmployee
+              isOpen={deleteModalOpen}
+              onClose={() => setDeleteModalOpen(false)}
+              employeeId={selectedEmployee.id}
+              employeeName={selectedEmployee.name}
+            />
+          </>
+        )}
     </div>
   );
 }

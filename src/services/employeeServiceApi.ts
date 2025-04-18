@@ -12,16 +12,15 @@ export interface ParentData {
   level: number;
 }
 
-export interface createEmployeeData {
-  id?: string;
-  _id?: string;
+export interface EmployeeDetails {
+  id: number;
   name: string;
   email: string;
-  level: number;
-  parents?: ParentData[];
-  currentParentId?: string;
   mobileNumber: string;
-  managerId?:number;
+  level: number;
+  role: string;
+  managerId?: number;
+  managerName:string;
 }
 
 export interface HierarchyData {
@@ -43,6 +42,9 @@ export interface CreateEmployeeRequest {
   level: number;
 }
 
+export interface UpdateEmployeeRequest extends CreateEmployeeRequest {
+  id: number;
+}
 export interface PaginationData {
   page: number,
   search?: string,
@@ -62,14 +64,23 @@ class EmployeeServiceApi extends API {
    
   }
 
+  async updateEmployee(id: number,data: UpdateEmployeeRequest
+  ): Promise<APIResponse> {
+      return this.patch(ApiType.private,`${this.baseUrl}/referrals/employees/${id}`,data);
+  }
+
   async getEmployee(data: PaginationData): Promise<APIResponse> {
       return this.get(ApiType.private, `${this.baseUrl}/referrals/employee-list?page=${data.page}&search=${data.search}`)
+  }
+
+  async deleteEmployee(id: number): Promise<APIResponse> {
+    return this.delete(ApiType.private,`${this.baseUrl}/referrals/employees/${id}`);
   }
 
   async getHierarchies(): Promise<APIResponse> {
     return this.get(ApiType.private, `${this.baseUrl}/referrals/hierarchies`);
   }
-
+ 
   async searchManagers(data: Employee): Promise<APIResponse> {
     return this.get(ApiType.private,`${this.baseUrl}/referrals/managers/${data.level}`);
   }
