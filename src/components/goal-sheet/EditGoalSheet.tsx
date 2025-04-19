@@ -19,7 +19,7 @@ interface EditHierarchyProps {
   };
 }
 
-export default function EditHierarchy({ isOpen, onClose, hierarchy }: EditHierarchyProps) {
+export default function EditGoalSheet({ isOpen, onClose, hierarchy }: EditHierarchyProps) {
   const router = useRouter();
   const [hierarchyData, setHierarchyData] = useState(hierarchy);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -33,9 +33,12 @@ export default function EditHierarchy({ isOpen, onClose, hierarchy }: EditHierar
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!hierarchyData.hierarchyName) newErrors.hierarchyName = 'Hierarchy name is required';
-    if (!hierarchyData.level || hierarchyData.level <= 0) newErrors.level = 'Level must be greater than 0';
-    
+    // if (!hierarchyData.hierarchyName) newErrors.hierarchyName = 'Hierarchy name is required';
+    // if (!hierarchyData.level || hierarchyData.level <= 0) newErrors.level = 'Level must be greater than 0';
+    if (hierarchyData.target < 0) newErrors.target = 'Target cannot be negative';
+    if (hierarchyData.totalUsers < 0) newErrors.totalUsers = 'Total users cannot be negative';
+    if (hierarchyData.totalRevenue < 0) newErrors.totalRevenue = 'Total revenue cannot be negative';
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -80,7 +83,7 @@ export default function EditHierarchy({ isOpen, onClose, hierarchy }: EditHierar
     <div className="fixed inset-0 bg-black-opacity flex items-center justify-center p-4 z-99999">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md dark:bg-gray-800">
         <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold dark:text-white">Edit Hierarchy</h2>
+          <h2 className="text-xl font-semibold dark:text-white">Edit Goal Sheet</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-300"
@@ -93,6 +96,7 @@ export default function EditHierarchy({ isOpen, onClose, hierarchy }: EditHierar
           <div>
             <Label htmlFor="hierarchyName">Hierarchy Name *</Label>
             <Input
+            disabled
               id="hierarchyName"
               name="hierarchyName"
               value={hierarchyData.hierarchyName}
@@ -105,15 +109,61 @@ export default function EditHierarchy({ isOpen, onClose, hierarchy }: EditHierar
           <div>
             <Label htmlFor="level">Level *</Label>
             <Input
+                disabled 
               id="level"
               name="level"
               type="number"
-              min="1"
-              value={hierarchyData.level || ''}
+              min="0"
+              value={hierarchyData.level || 0 }
               onChange={handleNumberChange}
               error={!!errors.level}
             />
             {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="target">Target Amount</Label>
+            <Input
+              id="target"
+              name="target"
+              type="number"
+              min="0"
+              step="1"
+              value={hierarchyData.target || ''}
+              onChange={handleNumberChange}
+              error={!!errors.target}
+            />
+            {errors.target && <p className="text-red-500 text-sm mt-1">{errors.target}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="totalUsers">Total Users</Label>
+            <Input
+              id="totalUsers"
+              name="totalUsers"
+              type="number"
+              min="0"
+              step="1"
+              value={hierarchyData.totalUsers || ''}
+              onChange={handleNumberChange}
+              error={!!errors.totalUsers}
+            />
+            {errors.totalUsers && <p className="text-red-500 text-sm mt-1">{errors.totalUsers}</p>}
+          </div>
+
+          <div>
+            <Label htmlFor="totalRevenue">Total Revenue</Label>
+            <Input
+              id="totalRevenue"
+              name="totalRevenue"
+              type="number"
+              min="0"
+              step="0.01"
+              value={hierarchyData.totalRevenue || ''}
+              onChange={handleNumberChange}
+              error={!!errors.totalRevenue}
+            />
+            {errors.totalRevenue && <p className="text-red-500 text-sm mt-1">{errors.totalRevenue}</p>}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
@@ -129,7 +179,7 @@ export default function EditHierarchy({ isOpen, onClose, hierarchy }: EditHierar
               disabled={isSubmitting}
               className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-70"
             >
-              {isSubmitting ? 'Updating...' : 'Update Hierarchy'}
+              {isSubmitting ? 'Updating...' : 'Update Goal Sheet'}
             </button>
           </div>
         </form>

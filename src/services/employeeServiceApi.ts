@@ -80,6 +80,14 @@ class EmployeeServiceApi extends API {
   async getHierarchies(): Promise<APIResponse> {
     return this.get(ApiType.private, `${this.baseUrl}/referrals/hierarchies`);
   }
+
+  async getEmployeeStats(): Promise<APIResponse> {
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/employees/stats`);
+  }
+
+  async getRecentEmployees(): Promise<APIResponse> {
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/employees/recent`);
+  }
  
   async searchManagers(data: Employee): Promise<APIResponse> {
     return this.get(ApiType.private,`${this.baseUrl}/referrals/managers/${data.level}`);
