@@ -9,9 +9,6 @@ export interface PaginationData {
 export interface CreateHierarchyRequest {
     hierarchyName: string;
     level: number;
-    target: number;
-    totalUsers: number;
-    totalRevenue: number;
 }
 
 class HierarchyServiceApi extends API {    
@@ -20,11 +17,10 @@ class HierarchyServiceApi extends API {
         return this.post(ApiType.private, `${this.baseUrl}/referrals/create-hierarchy`, {
           hierarchyName: data.hierarchyName,
           level: data.level,
-          target:data.target,
-          totalUsers: data.totalUsers,
-          totalRevenue: data.totalRevenue
-        });
-       
+          target:0,
+          totalUsers: 0,
+          totalRevenue: 0.00
+        });       
       }
 
     async updateHierarchy(

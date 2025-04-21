@@ -13,17 +13,11 @@ interface CreateHierarchyProps {
 interface HierarchyData {
   hierarchyName: string;
   level: number;
-  target: number;
-  totalUsers: number;
-  totalRevenue: number;
 }
 
 const DEFAULT_HIERARCHY_DATA: HierarchyData = {
   hierarchyName: "",
-  level: 0,
-  target: 0,
-  totalUsers: 0,
-  totalRevenue: 0
+  level: 0
 };
 
 export default function CreateHierarchy({ isOpen, onClose }: CreateHierarchyProps) {
@@ -36,10 +30,7 @@ export default function CreateHierarchy({ isOpen, onClose }: CreateHierarchyProp
     const newErrors: Record<string, string> = {};
     if (!hierarchyData.hierarchyName) newErrors.hierarchyName = 'Hierarchy name is required';
     if (!hierarchyData.level || hierarchyData.level <= 0) newErrors.level = 'Level must be greater than 0';
-    if (hierarchyData.target < 0) newErrors.target = 'Target cannot be negative';
-    if (hierarchyData.totalUsers < 0) newErrors.totalUsers = 'Total users cannot be negative';
-    if (hierarchyData.totalRevenue < 0) newErrors.totalRevenue = 'Total revenue cannot be negative';
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -133,51 +124,6 @@ export default function CreateHierarchy({ isOpen, onClose }: CreateHierarchyProp
               error={!!errors.level}
             />
             {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="target">Target Amount</Label>
-            <Input
-              id="target"
-              name="target"
-              type="number"
-              min="0"
-              step="1"
-              value={hierarchyData.target || ''}
-              onChange={handleNumberChange}
-              error={!!errors.target}
-            />
-            {errors.target && <p className="text-red-500 text-sm mt-1">{errors.target}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="totalUsers">Initial Users</Label>
-            <Input
-              id="totalUsers"
-              name="totalUsers"
-              type="number"
-              min="0"
-              step="1"
-              value={hierarchyData.totalUsers || ''}
-              onChange={handleNumberChange}
-              error={!!errors.totalUsers}
-            />
-            {errors.totalUsers && <p className="text-red-500 text-sm mt-1">{errors.totalUsers}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="totalRevenue">Initial Revenue</Label>
-            <Input
-              id="totalRevenue"
-              name="totalRevenue"
-              type="number"
-              min="0"
-              step="0.01"
-              value={hierarchyData.totalRevenue || ''}
-              onChange={handleNumberChange}
-              error={!!errors.totalRevenue}
-            />
-            {errors.totalRevenue && <p className="text-red-500 text-sm mt-1">{errors.totalRevenue}</p>}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

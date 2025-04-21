@@ -1,65 +1,60 @@
 "use client";
+
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
-import CreateEmployee from '@/components/employee/CreateEmployee';
-import EmployeeTable from "@/components/employee/EmployeeTable";
+import GoalSheetTable from "@/components/goal-sheet/GoalSheetTable";
 import Pagination from "@/components/tables/Pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { employeeServiceApi } from "@/services/employeeServiceApi";
+import { hierarchyServiceApi } from "@/services/hierarchyServiceApi";
 
-interface EmployeeList {
-    id: number;
-    name: string;
-    mobileNumber: string;
-    email:string;
-    role:string;
-    managerName:string;
-    level: number;
-    managerId?: number;
-    joinDate: string;
+interface HierarchyList {
+  id: number;
+  hierarchyName: string;
+  level: number;
+  target: number;
+  totalUsers: number;
+  totalRevenue: number;
 }
 
-interface EmployeeApiResponse {
-  employees: EmployeeList[];
+interface HierarchyApiResponse {
+  hierarchies: HierarchyList[];
   error: string | null;
   totalCount: number;
   totalPages: number;
 }
 
-async function fetchEmployees(
+async function fetchHierarchies(
   page: number,
   searchQuery: string = ""
-): Promise<EmployeeApiResponse> {
+): Promise<HierarchyApiResponse> {
   try {
-    const response = await employeeServiceApi.getEmployee({
+    const response = await hierarchyServiceApi.getHierarchy({
       page,
       search: searchQuery,
     });
     const responseData = response.data as {
       data: {
-        employees: EmployeeList[];
+        hierarchies: HierarchyList[];
         totalcount: number;
         totalPages: number;
-      }
+      };
     };
-
     return {
-      employees: responseData.data.employees,
+      hierarchies: responseData.data.hierarchies,
       totalCount: responseData.data.totalcount,
       totalPages: responseData.data.totalPages,
       error: null,
     };
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error
-      ? error.message
-      : "Failed to fetch hierarchies";
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch hierarchies";
 
     toast.error(errorMessage);
 
     return {
-      employees: [],
+      hierarchies: [],
       totalCount: 0,
       totalPages: 0,
       error: errorMessage,
@@ -68,7 +63,7 @@ async function fetchEmployees(
 }
 
 // Create a separate component for search functionality that uses useSearchParams
-function SearchWrapper() {
+function SearchWrapper({ isSearching }: { isSearching: boolean }) {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -144,17 +139,40 @@ function SearchWrapper() {
         type="text"
         value={searchQuery}
         onChange={(e) => updateSearchQuery(e.target.value)}
-        placeholder="Search employees..."
+        placeholder="Search goal..."
         className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 xl:w-full"
       />
+      {isSearching && (
+        <span className="absolute -translate-y-1/2 right-4 top-1/2">
+          <svg
+            className="animate-spin h-5 w-5 text-gray-500"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+        </span>
+      )}
     </div>
   );
 }
 
 // Client Component wrapper for the main page that uses searchParams
-function EmployeeListClient() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [employees, setEmployees] = useState<EmployeeList[]>([]);
+function HierarchyListClient() {
+  const [hierarchies, setHierarchies] = useState<HierarchyList[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -169,10 +187,10 @@ function EmployeeListClient() {
       setIsSearching(true);
       const query = searchParams ? searchParams.get("search") || "" : "";
       
-      const { employees, error, totalCount, totalPages } =
-        await fetchEmployees(page, query);
+      const { hierarchies, error, totalCount, totalPages } =
+        await fetchHierarchies(page, query);
 
-      setEmployees(employees);
+      setHierarchies(hierarchies);
       setError(error);
       setTotalCount(totalCount);
       setTotalPages(totalPages);
@@ -194,26 +212,12 @@ function EmployeeListClient() {
 
   return (
     <div>
-      <PageBreadcrumb pageTitle="Employee" />
+      <PageBreadcrumb pageTitle="Goal Sheet" />
       <div className="space-y-6">
-        <ComponentCard title="Employee List">
+        <ComponentCard title="Goal Sheet List">
           <div className="flex justify-self-end">
-            <SearchWrapper />
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="w-auto inline-flex bg-brand-500 text-white hover:bg-brand-600 
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 px-4 py-2 
-              rounded-lg text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed ml-1"
-            >
-              Create New Employee
-            </button>
-          </div>
-
-          <CreateEmployee
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-          />
-          
+            <SearchWrapper isSearching={isSearching} />            
+          </div>    
           {isSearching ? (
             <div className="flex justify-center py-8">
               <svg
@@ -239,7 +243,7 @@ function EmployeeListClient() {
             </div>
           ) : (
             <>
-              <EmployeeTable employees={employees} error={error} />
+              <GoalSheetTable hierarchies={hierarchies} error={error} />
               {totalCount > 0 && (
                 <Pagination
                   currentPage={page}
@@ -256,10 +260,10 @@ function EmployeeListClient() {
 }
 
 // Main page component that wraps the client component with Suspense
-export default function EmployeeListPage() {
+export default function GoalListPage() {
   return (
-    <React.Suspense fallback={<div>Loading employee data...</div>}>
-      <EmployeeListClient />
+    <React.Suspense fallback={<div>Loading Goal data...</div>}>
+      <HierarchyListClient />
     </React.Suspense>
   );
 }
