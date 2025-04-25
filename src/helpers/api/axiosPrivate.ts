@@ -17,6 +17,12 @@ axios.interceptors.request.use(
 
     if (session?.token) {
       config.headers["Authorization"] = `Bearer ${token}`;
+    }else {      
+      storageService.delete('session');    
+      if (typeof window !== 'undefined') {
+        window.location.href = '/signin';
+      }
+      return Promise.reject(new Error('No authentication token found'));
     }
     return config;
   },

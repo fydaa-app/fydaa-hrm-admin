@@ -2,15 +2,23 @@
 import React , { useEffect } from "react";
 import {TodaySale} from "@/components/ecommerce/TodaySale";
 import RecentOrders from "@/components/ecommerce/RecentOrders";
-import Cookies from 'js-cookie';
 import { useRouter } from "next/navigation";
+import  { storageService }  from "@/helpers/storage";
 
+interface Session {
+  token: string;
+  accessToken: string;
+  refreshToken: string;
+}
 
 export default function Ecommerce() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = Cookies.get("accessToken");
+
+    const session = storageService.get<Session>('session');
+    const token = session?.token ?? 'invalid';
+
     if (!token) {
       console.error("Authorization token is missing");
       router.push("/signin");
@@ -26,3 +34,4 @@ export default function Ecommerce() {
     </div>
   );
 }
+
