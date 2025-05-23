@@ -73,7 +73,7 @@ export default function SignInForm() {
       }
     } catch (err) {
       const error = err as ApiError; // Cast to our defined error type instead of any
-      console.error("Login error:", error);
+      // console.error("Login error:", error);
 
       // Specifically handle authentication errors
       if (error.response) {
