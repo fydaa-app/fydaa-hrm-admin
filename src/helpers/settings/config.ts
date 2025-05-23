@@ -9,6 +9,7 @@ interface IValues {
     EMPLOYEE_SERVICE: string, 
     GOALSHEET_SERVICE: string, 
     TRANSACTION_SERVICE: string,
+    STUDENT_SERVICE: string,
 }
 
 interface ISettings {
@@ -26,6 +27,7 @@ const envSettingsMap: ISettings = {
         EMPLOYEE_SERVICE: 'http://localhost:3005', 
         GOALSHEET_SERVICE: 'http://localhost:3005', 
         TRANSACTION_SERVICE: 'http://localhost:3005', 
+        STUDENT_SERVICE: 'http://localhost:3000',
     },
     beta: {
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
@@ -35,6 +37,7 @@ const envSettingsMap: ISettings = {
         EMPLOYEE_SERVICE: 'http://localhost:8000/user', 
         GOALSHEET_SERVICE: 'http://localhost:8000/goal-sheet', 
         TRANSACTION_SERVICE: 'https://stocktransaction-stage.fydaa.com', 
+        STUDENT_SERVICE: 'https://auth-stage.fydaa.com',
     },
     prod: {
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
@@ -44,6 +47,7 @@ const envSettingsMap: ISettings = {
         EMPLOYEE_SERVICE: 'https://crm-prod.fydaa.com', 
         GOALSHEET_SERVICE: 'https://crm-prod.fydaa.com', 
         TRANSACTION_SERVICE: 'https://crm-prod.fydaa.com', 
+        STUDENT_SERVICE: 'https://auth.fydaa.com', 
     },
 }
 

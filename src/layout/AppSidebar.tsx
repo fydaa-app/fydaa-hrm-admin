@@ -39,6 +39,11 @@ const navItems: NavItem[] = [
     icon: <UserCircleIcon />,
     name: "Hierarchy",
     path: "/hierarchy",
+  }, 
+  {
+    icon: <UserCircleIcon />,
+    name: "Student",
+    path: "/student",
   },  
   {
     name: "Sign Out",
