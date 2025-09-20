@@ -36,12 +36,13 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     mobileNumber: employee.mobileNumber,
     email: employee.email,
     managerId: employee.managerId || undefined,
-    level: Number(employee.level), // Convert string to number
+    level: Number(employee.level),
     role: employee.role
   });
   const [hierarchies, setHierarchies] = useState<Hierarchy[]>([]);
   const [managerResults, setManagerResults] = useState<Manager[]>([]);
   const [searchQuery, setSearchQuery] = useState(employee.managerName || "");
+  const [showDropdown, setShowDropdown] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingManagers, setIsLoadingManagers] = useState(false);
   const [isLoadingButton, setIsLoadingButton] = useState(false);
@@ -61,17 +62,20 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     }
   }, []);
 
-  const fetchManagers = useCallback(async (level: number) => {
+  const fetchManagers = useCallback(async (level: number, query?: string) => {
     if (!level) return;
     
     try {
       setIsLoadingManagers(true);
-      const response = await employeeServiceApi.searchManagers({ level });
+      const response = await employeeServiceApi.searchManagers({ 
+        level,
+        ...(query && { search: query })
+      });
       const responseData = response.data as Manager[]
       setManagerResults(responseData);
       
-      // If employee has a manager, find and set it in the search query
-      if (employee.managerId && employee.managerName) {
+      // If employee has a manager and this is initial load, find and set it
+      if (!query && employee.managerId && employee.managerName) {
         const manager = responseData.find(m => m.id === employee.managerId);
         if (manager) {
           setSearchQuery(manager.name);
@@ -80,6 +84,7 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     } catch (error) {
       console.error(error)
       toast.error('Failed to fetch managers');
+      setManagerResults([]);
     } finally {
       setIsLoadingManagers(false);
     }
@@ -102,10 +107,11 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
         mobileNumber: employee.mobileNumber,
         email: employee.email,
         managerId: employee.managerId || undefined,
-        level: Number(employee.level), // Convert string to number
+        level: Number(employee.level),
         role: employee.role
       });
       setSearchQuery(employee.managerName || "");
+      setShowDropdown(false);
     }
   }, [isOpen, employee]);
   
@@ -115,7 +121,7 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     if (!employeeMetadata.email) newErrors.email = 'Email is required';
     if (!employeeMetadata.mobileNumber) newErrors.phone = 'Phone is required';
     if (!employeeMetadata.level) newErrors.level = 'Level is required';
-    // Only require manager if level > 0 (assuming level 0 is admin/root)
+    // Only require manager if level > 0
     if (employeeMetadata.level > 0 && !employeeMetadata.managerId) {
       newErrors.manager = 'Manager is required';
     }
@@ -131,7 +137,7 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     try {
       await employeeServiceApi.updateEmployee(employeeMetadata.id, {
         ...employeeMetadata,
-        role: String(employeeMetadata.level) // Ensure role matches level
+        role: String(employeeMetadata.level)
       });     
       toast.success('Employee updated successfully');
       router.refresh();
@@ -147,6 +153,7 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
   const closeModal = () => {
     setSearchQuery("");
     setManagerResults([]);
+    setShowDropdown(false);
     setErrors({});
     onClose();
   };
@@ -156,27 +163,77 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     setEmployeeMetadata(prev => ({
       ...prev,
       level,
-      managerId: level === 0 ? undefined : prev.managerId // Reset manager when level changes, except for level 0
+      managerId: level === 0 ? undefined : prev.managerId
     }));
     setSearchQuery("");
+    setShowDropdown(false);
+    
+    // Fetch managers for the new level
+    if (level > 0) {
+      fetchManagers(level);
+    } else {
+      setManagerResults([]);
+    }
   };
 
   const handleManagerSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
     if (!employeeMetadata.level) return;
-    setSearchQuery(e.target.value);
-    try {
-      setIsLoadingManagers(true);
-      const response = await employeeServiceApi.searchManagers({
-        level: employeeMetadata.level
-      });
-      const responseData = response.data as Manager[]
-      setManagerResults(responseData);
-    } catch (error) {
-      console.error(error);      
-      toast.error('Failed to search managers');
-    } finally {
-      setIsLoadingManagers(false);
+    
+    // Clear manager selection if search query changes
+    if (employeeMetadata.managerId) {
+      setEmployeeMetadata(prev => ({
+        ...prev,
+        managerId: undefined
+      }));
     }
+    
+    // Show dropdown when user types
+    setShowDropdown(true);
+    
+    // Debounce the search to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      if (query.trim()) {
+        fetchManagers(employeeMetadata.level, query);
+      } else {
+        fetchManagers(employeeMetadata.level);
+      }
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  };
+
+  const handleManagerSelect = (manager: Manager) => {
+    setEmployeeMetadata(prev => ({
+      ...prev,
+      managerId: manager.id
+    }));
+    setSearchQuery(manager.name);
+    setShowDropdown(false);
+    setManagerResults([]);
+    
+    // Clear manager error if it exists
+    if (errors.manager) {
+      setErrors(prev => ({
+        ...prev,
+        manager: ''
+      }));
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (employeeMetadata.level > 0 && managerResults.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding dropdown to allow for clicks
+    setTimeout(() => {
+      setShowDropdown(false);
+    }, 200);
   };
 
   if (!isOpen) return null;
@@ -233,7 +290,9 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
                 ...prev,
                 mobileNumber: e.target.value
               }))}
-            />           
+              error={!!errors.phone}
+            />
+            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}           
           </div>
 
           <div>
@@ -251,7 +310,7 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
             {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
           </div>
 
-          {employeeMetadata.level > 0 && ( // Only show manager field if level > 0
+          {employeeMetadata.level > 0 && (
             <div>
               <Label htmlFor="manager">Manager *</Label>
               <div className="relative">
@@ -259,6 +318,8 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
                   id="manager"
                   value={searchQuery}
                   onChange={handleManagerSearch}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   placeholder={employeeMetadata.level ? "Search managers..." : "Select level first"}
                   disabled={!employeeMetadata.level}
                   error={!!errors.manager}
@@ -269,25 +330,24 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
                   </div>
                 )}
                 
-                {!isLoadingManagers && managerResults.length > 0 && (
+                {showDropdown && !isLoadingManagers && managerResults.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
                     {managerResults.map(manager => (
                       <button
                         key={manager.id}
                         type="button"
                         className="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
-                        onClick={() => {
-                          setEmployeeMetadata(prev => ({
-                            ...prev,
-                            managerId: manager.id
-                          }));
-                          setSearchQuery(manager.name);
-                          setManagerResults([]);
-                        }}
+                        onClick={() => handleManagerSelect(manager)}
                       >
                         {manager.name} ({manager.email})
                       </button>
                     ))}
+                  </div>
+                )}
+                
+                {showDropdown && !isLoadingManagers && managerResults.length === 0 && searchQuery && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    No managers found
                   </div>
                 )}
               </div>
