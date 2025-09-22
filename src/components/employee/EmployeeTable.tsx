@@ -20,6 +20,7 @@ export interface EmployeeTableProps {
     level: number;
     managerId?: number;
     joinDate:string;
+    referralCode?: string;
   }[];
   error: string | null;
 }
@@ -75,6 +76,9 @@ export default function EmployeeTable({
                     Manager Name
                   </TableCell>
                   <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
+                    Referral Code
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
                     Actions
                   </TableCell>
                 </TableRow>
@@ -107,7 +111,10 @@ export default function EmployeeTable({
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {employee.managerName}
-                    </TableCell>                    
+                    </TableCell>         
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {employee.referralCode}
+                    </TableCell>      
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <div className="flex space-x-2">
                         <button
