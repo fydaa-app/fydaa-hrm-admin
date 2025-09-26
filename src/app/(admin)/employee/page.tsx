@@ -19,6 +19,7 @@ interface EmployeeList {
     level: number;
     managerId?: number;
     joinDate: string;
+    isActive: boolean;
 }
 
 interface EmployeeApiResponse {
@@ -54,7 +55,7 @@ async function fetchEmployees(
   } catch (error: unknown) {
     const errorMessage = error instanceof Error
       ? error.message
-      : "Failed to fetch hierarchies";
+      : "Failed to fetch Employees";
 
     toast.error(errorMessage);
 

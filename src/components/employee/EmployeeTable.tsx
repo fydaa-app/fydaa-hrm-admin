@@ -21,6 +21,7 @@ export interface EmployeeTableProps {
     managerId?: number;
     joinDate:string;
     referralCode?: string;
+    isActive: boolean; // Add isActive field
   }[];
   error: string | null;
 }
@@ -34,6 +35,7 @@ export interface Employee {
   role: string;
   managerId?: number;
   managerName:string;
+  isActive: boolean; // Add isActive field
 }
 
 export default function EmployeeTable({ 
@@ -50,7 +52,7 @@ export default function EmployeeTable({
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
-        <div className="min-w-[1102px]">
+        <div className="min-w-[1200px]"> {/* Increased min-width to accommodate new column */}
           {error && <div className="m-4"><p style={{ color: "red" }}>{error}</p></div>}
           {!error && employees.length > 0 ? (
             <Table>
@@ -74,6 +76,9 @@ export default function EmployeeTable({
                   </TableCell>
                   <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
                     Manager Name
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
+                    Status
                   </TableCell>
                   <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
                     Referral Code
@@ -112,6 +117,15 @@ export default function EmployeeTable({
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {employee.managerName}
                     </TableCell>         
+                    <TableCell className="px-4 py-3 text-start text-theme-sm">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        employee.isActive 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                      }`}>
+                        {employee.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {employee.referralCode}
                     </TableCell>      

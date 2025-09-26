@@ -37,7 +37,8 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     email: employee.email,
     managerId: employee.managerId || undefined,
     level: Number(employee.level),
-    role: employee.role
+    role: employee.role,
+    isActive: employee.isActive ?? true // Add isActive field with fallback to true
   });
   const [hierarchies, setHierarchies] = useState<Hierarchy[]>([]);
   const [managerResults, setManagerResults] = useState<Manager[]>([]);
@@ -108,7 +109,8 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
         email: employee.email,
         managerId: employee.managerId || undefined,
         level: Number(employee.level),
-        role: employee.role
+        role: employee.role,
+        isActive: employee.isActive ?? true // Add isActive field
       });
       setSearchQuery(employee.managerName || "");
       setShowDropdown(false);
@@ -120,7 +122,7 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     if (!employeeMetadata.name) newErrors.name = 'Name is required';
     if (!employeeMetadata.email) newErrors.email = 'Email is required';
     if (!employeeMetadata.mobileNumber) newErrors.phone = 'Phone is required';
-    if (!employeeMetadata.level) newErrors.level = 'Level is required';
+    // if (!employeeMetadata.level) newErrors.level = 'Level is required';
     // Only require manager if level > 0
     if (employeeMetadata.level > 0 && !employeeMetadata.managerId) {
       newErrors.manager = 'Manager is required';
@@ -354,6 +356,31 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
               {errors.manager && <p className="text-red-500 text-sm mt-1">{errors.manager}</p>}
             </div>
           )}
+
+          <div>
+            <Label htmlFor="isActive">Status</Label>
+            <div className="flex items-center mt-2">
+              <button
+                type="button"
+                onClick={() => setEmployeeMetadata(prev => ({
+                  ...prev,
+                  isActive: !prev.isActive
+                }))}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  employeeMetadata.isActive ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    employeeMetadata.isActive ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                {employeeMetadata.isActive ? 'Active' : 'Inactive'}
+              </span>
+            </div>
+          </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <button
