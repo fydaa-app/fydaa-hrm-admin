@@ -21,6 +21,7 @@ export interface EmployeeDetails {
   role: string;
   managerId?: number;
   managerName:string;
+  isActive?: boolean;
 }
 
 export interface HierarchyData {
@@ -40,6 +41,7 @@ export interface CreateEmployeeRequest {
   role: string;
   managerId?: number;  // Use consistent field name
   level: number;
+  isActive?: boolean;
 }
 
 export interface UpdateEmployeeRequest extends CreateEmployeeRequest {
@@ -59,7 +61,8 @@ class EmployeeServiceApi extends API {
       role: data.role,
       managerId:data.managerId,
       mobileNumber: data.mobileNumber,
-      email: data.email
+      email: data.email,
+      isActive: true,
     });
    
   }
