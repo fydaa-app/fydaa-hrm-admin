@@ -2,6 +2,8 @@ export const ENV = process.env.NEXT_PUBLIC_ENV || process.env.ENV
 export const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || process.env.APP_DOMAIN
 
 interface IValues {
+    RELATIONAL_MANAGER_SERVICE: string
+    ADVISOR_SERVICE: string //added for the new advisor page 
     INTERNAL_SERVICE: string
     AUTH_SERVICE: string
     API_SERVICE: string // Added for the new API service base URL
@@ -20,6 +22,8 @@ interface ISettings {
 
 const envSettingsMap: ISettings = {
     dev: {
+        ADVISOR_SERVICE :`http://localhost:3005`,//added for the new advisor page 
+        RELATIONAL_MANAGER_SERVICE :`http://localhost:3005`,//added for the new  manager page
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
         AUTH_SERVICE: 'http://localhost:3005', // Changed to match the new login URL port
         API_SERVICE: 'http://localhost:3005', // Separate base URL for other API calls
@@ -30,6 +34,8 @@ const envSettingsMap: ISettings = {
         STUDENT_SERVICE: 'http://localhost:3000',
     },
     beta: {
+        ADVISOR_SERVICE :``,//added for the new advisor page
+        RELATIONAL_MANAGER_SERVICE :`http://localhost:3005`,// UPDATE THIS for the new  manager page 
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
         AUTH_SERVICE: 'https://referral.fydaa.in', // Removed /auth/signin to match the new URL structure
         API_SERVICE: 'https://referral.fydaa.in',
@@ -40,6 +46,8 @@ const envSettingsMap: ISettings = {
         STUDENT_SERVICE: 'https://auth-stage.fydaa.com',
     },
     prod: {
+        ADVISOR_SERVICE :``,//added for the new advisor page 
+        RELATIONAL_MANAGER_SERVICE :`http://localhost:3005`,// UPDATE THIS for the new  manager page 
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
         AUTH_SERVICE: 'https://crm-prod.fydaa.com', // Removed /api to match the new URL structure
         API_SERVICE: 'https://crm-prod.fydaa.com',

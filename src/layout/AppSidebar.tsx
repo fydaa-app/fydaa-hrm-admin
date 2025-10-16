@@ -32,6 +32,16 @@ const navItems: NavItem[] = [
   },
   {
     icon: <UserCircleIcon />,
+    name: "Advisor",
+    path: "/advisor",
+  },
+  {
+    icon: <UserCircleIcon />,
+    name: "Relational Manager",
+    path: "/relational-managers",
+  },
+  {
+    icon: <UserCircleIcon />,
     name: "Goal Sheet",
     path: "/goal-sheet",
   },
