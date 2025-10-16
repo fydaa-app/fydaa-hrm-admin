@@ -23,7 +23,7 @@ export interface AdvisorTableProps {
     description: string;
     age: number;
     experienceYears: number;
-    photo?: string;
+    photo: string;
     attachment1?: string;
     attachment2?: string;
     isActive: boolean;
@@ -40,7 +40,7 @@ export interface Advisor {
   description: string;
   age: number;
   experienceYears: number;
-  photo?: string;
+  photo: string;
   attachment1?: string;
   attachment2?: string;
   isActive: boolean;

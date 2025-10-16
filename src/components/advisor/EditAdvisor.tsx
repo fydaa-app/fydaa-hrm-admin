@@ -245,7 +245,7 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
 
           {/* Photo Upload */}
           <div>
-          // photo input section
+          {/* // photo input section */}
 <Label htmlFor="photo">Photo * {advisor.photo && '(Upload new to replace)'}</Label>
 <input
               id="photo"
