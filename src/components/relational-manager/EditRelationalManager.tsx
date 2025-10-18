@@ -22,17 +22,17 @@ interface UpdateRelationalManagerProps {
 export default function UpdateRelationalManager({ isOpen, onClose, relationalManager }: UpdateRelationalManagerProps) {
   const router = useRouter();
   const [relationalManagerMetadata, setRelationalManagerMetadata] = useState<UpdateRelationalManagerRequest>({
-    id: relationalManager.id,
-    name: relationalManager.name,
-    mobileNumber: relationalManager.mobileNumber,
-    email: relationalManager.email,
-    type: relationalManager.type || "employee",
-    employeeId: relationalManager.employeeId,
-    appointeeName: relationalManager.appointeeName || "",
-    profilePicture: relationalManager.profilePicture || undefined,
-    description: relationalManager.description || "",
-    isActive: relationalManager.isActive ?? true
-  });
+  id: relationalManager.id,
+  name: relationalManager.name,
+  mobileNumber: relationalManager.mobileNumber,
+  email: relationalManager.email,
+  type: relationalManager.type || "employee",
+  employeeId: relationalManager.employeeId,
+  profilePicture: relationalManager.profilePicture || undefined,
+  description: relationalManager.description || "",
+  isActive: relationalManager.isActive ?? true
+});
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
@@ -73,38 +73,37 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   }, [isOpen, relationalManagerMetadata.type, fetchEmployees]);
 
   useEffect(() => {
-    if (isOpen && relationalManager) {
-      setRelationalManagerMetadata({
-        id: relationalManager.id,
-        name: relationalManager.name,
-        mobileNumber: relationalManager.mobileNumber,
-        email: relationalManager.email,
-        type: relationalManager.type || "employee",
-        employeeId: relationalManager.employeeId,
-        appointeeName: relationalManager.appointeeName || "",
-        profilePicture: relationalManager.profilePicture || undefined,
-        description: relationalManager.description || "",
-        isActive: relationalManager.isActive ?? true
-      });
-      setPreviewImage(relationalManager.profilePicture || null);
-    }
-  }, [isOpen, relationalManager]);
+  if (isOpen && relationalManager) {
+    setRelationalManagerMetadata({
+      id: relationalManager.id,
+      name: relationalManager.name,
+      mobileNumber: relationalManager.mobileNumber,
+      email: relationalManager.email,
+      type: relationalManager.type || "employee",
+      employeeId: relationalManager.employeeId,
+      profilePicture: relationalManager.profilePicture || undefined,
+      description: relationalManager.description || "",
+      isActive: relationalManager.isActive ?? true
+    });
+    setPreviewImage(relationalManager.profilePicture || null);
+  }
+}, [isOpen, relationalManager]);
+
   
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!relationalManagerMetadata.name) newErrors.name = 'Name is required';
-    if (!relationalManagerMetadata.email) newErrors.email = 'Email is required';
-    if (!relationalManagerMetadata.mobileNumber) newErrors.phone = 'Phone is required';
-    
-    if (relationalManagerMetadata.type === 'employee') {
-      if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
-    } else if (relationalManagerMetadata.type === 'company_appointee') {
-      if (!relationalManagerMetadata.appointeeName) newErrors.appointee = 'Appointee name is required';
-    }
+  const newErrors: Record<string, string> = {};
+  if (!relationalManagerMetadata.name) newErrors.name = 'Name is required';
+  if (!relationalManagerMetadata.email) newErrors.email = 'Email is required';
+  if (!relationalManagerMetadata.mobileNumber) newErrors.phone = 'Phone is required';
+  
+  if (relationalManagerMetadata.type === 'employee') {
+    if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
 
   const handleUpdateRelationalManager = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,13 +136,13 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   };
 
   const handleTypeChange = (value: string) => {
-    setRelationalManagerMetadata(prev => ({
-      ...prev,
-      type: value as 'employee' | 'company_appointee',
-      employeeId: undefined,
-      appointeeName: ""
-    }));
-  };
+  setRelationalManagerMetadata(prev => ({
+    ...prev,
+    type: value as 'employee' | 'company_appointee',
+    employeeId: undefined
+  }));
+};
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -311,45 +310,31 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
             />
           </div>
 
-          {relationalManagerMetadata.type === 'employee' ? (
-            <div>
-              <Label htmlFor="employee">Employee *</Label>
-              {isLoadingEmployees ? (
-                <div className="flex items-center justify-center py-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
-                  <span className="ml-2 text-sm text-gray-600">Loading employees...</span>
-                </div>
-              ) : (
-                <Select
-                  defaultValue={relationalManagerMetadata.employeeId ? String(relationalManagerMetadata.employeeId) : ""}
-                  onChange={handleEmployeeChange}
-                  options={[
-                    { value: "", label: "Select an employee" },
-                    ...employees.map(emp => ({
-                      value: String(emp.id),
-                      label: `${emp.name} (${emp.email})`
-                    }))
-                  ]}
-                />
-              )}
-              {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="appointeeName">Appointee Name *</Label>
-              <Input
-                id="appointeeName"
-                value={relationalManagerMetadata.appointeeName || ""}
-                onChange={(e) => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  appointeeName: e.target.value
-                }))}
-                error={!!errors.appointee}
-                placeholder="Enter appointee name"
-              />
-              {errors.appointee && <p className="text-red-500 text-sm mt-1">{errors.appointee}</p>}
-            </div>
-          )}
+          {relationalManagerMetadata.type === 'employee' && (
+  <div>
+    <Label htmlFor="employee">Employee *</Label>
+    {isLoadingEmployees ? (
+      <div className="flex items-center justify-center py-2">
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+        <span className="ml-2 text-sm text-gray-600">Loading employees...</span>
+      </div>
+    ) : (
+      <Select
+        defaultValue={relationalManagerMetadata.employeeId ? String(relationalManagerMetadata.employeeId) : ""}
+        onChange={handleEmployeeChange}
+        options={[
+          { value: "", label: "Select an employee" },
+          ...employees.map(emp => ({
+            value: String(emp.id),
+            label: `${emp.name} (${emp.email})`
+          }))
+        ]}
+      />
+    )}
+    {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
+  </div>
+)}
+
 
           <div>
             <Label htmlFor="isActive">Status</Label>

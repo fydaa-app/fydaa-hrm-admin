@@ -7,12 +7,11 @@ export interface RelationalManagerDetails {
   email: string;
   mobileNumber: string;
   type: 'employee' | 'company_appointee';
-  employeeId?: number;
-  appointeeName?: string;
+  employeeId?: number;  // Only populated when type='employee'
   profilePicture?: string;
   description?: string;
   isActive?: boolean;
-  employee?: {
+  employee?: {          // Only populated when type='employee'
     id: number;
     name: string;
     email: string;
@@ -24,12 +23,12 @@ export interface CreateRelationalManagerRequest {
   email: string;
   mobileNumber: string;
   type: 'employee' | 'company_appointee';
-  employeeId?: number;
-  appointeeName?: string;
+  employeeId?: number;  // Only for type='employee'
   profilePicture?: File | string;
   description?: string;
   isActive?: boolean;
 }
+
 
 export interface UpdateRelationalManagerRequest extends CreateRelationalManagerRequest {
   id: number;
@@ -60,62 +59,58 @@ export interface ApiResponseData {
 class RelationalManagerServiceApi extends API {
 
   async createRelationalManager(data: CreateRelationalManagerRequest): Promise<APIResponse> {
-    const formData = new FormData();
-    
-    formData.append('name', data.name);
-    formData.append('email', data.email);
-    formData.append('mobileNumber', data.mobileNumber);
-    formData.append('type', data.type);
-    
-    if (data.type === 'employee' && data.employeeId) {
-      formData.append('employeeId', data.employeeId.toString());
-    }
-    
-    if (data.type === 'company_appointee' && data.appointeeName) {
-      formData.append('appointeeName', data.appointeeName);
-    }
-    
-    if (data.profilePicture instanceof File) {
-      formData.append('profilePicture', data.profilePicture);
-    }
-    
-    if (data.description) {
-      formData.append('description', data.description);
-    }
-    
-    formData.append('isActive', String(data.isActive ?? true));
-    
-    return this.post(ApiType.private, `${this.baseUrl}/referrals/relationship-manager`, formData);
+  const formData = new FormData();
+  
+  formData.append('name', data.name);
+  formData.append('email', data.email);
+  formData.append('mobileNumber', data.mobileNumber);
+  formData.append('type', data.type);
+  
+  // Only add employeeId when type is 'employee'
+  if (data.type === 'employee' && data.employeeId) {
+    formData.append('employeeId', data.employeeId.toString());
   }
+  
+  if (data.profilePicture instanceof File) {
+    formData.append('profilePicture', data.profilePicture);
+  }
+  
+  if (data.description) {
+    formData.append('description', data.description);
+  }
+  
+  formData.append('isActive', String(data.isActive ?? true));
+  
+  return this.post(ApiType.private, `${this.baseUrl}/referrals/relationship-manager`, formData);
+}
+
 
   async updateRelationalManager(id: number, data: UpdateRelationalManagerRequest): Promise<APIResponse> {
-    const formData = new FormData();
-    
-    formData.append('name', data.name);
-    formData.append('email', data.email);
-    formData.append('mobileNumber', data.mobileNumber);
-    formData.append('type', data.type);
-    
-    if (data.type === 'employee' && data.employeeId) {
-      formData.append('employeeId', data.employeeId.toString());
-    }
-    
-    if (data.type === 'company_appointee' && data.appointeeName) {
-      formData.append('appointeeName', data.appointeeName);
-    }
-    
-    if (data.profilePicture instanceof File) {
-      formData.append('profilePicture', data.profilePicture);
-    }
-    
-    if (data.description) {
-      formData.append('description', data.description);
-    }
-    
-    formData.append('isActive', String(data.isActive ?? true));
-    
-    return this.patch(ApiType.private, `${this.baseUrl}/referrals/relationship-manager/${id}`, formData);
+  const formData = new FormData();
+  
+  formData.append('name', data.name);
+  formData.append('email', data.email);
+  formData.append('mobileNumber', data.mobileNumber);
+  formData.append('type', data.type);
+  
+  // Only add employeeId when type is 'employee'
+  if (data.type === 'employee' && data.employeeId) {
+    formData.append('employeeId', data.employeeId.toString());
   }
+  
+  if (data.profilePicture instanceof File) {
+    formData.append('profilePicture', data.profilePicture);
+  }
+  
+  if (data.description) {
+    formData.append('description', data.description);
+  }
+  
+  formData.append('isActive', String(data.isActive ?? true));
+  
+  return this.patch(ApiType.private, `${this.baseUrl}/referrals/relationship-manager/${id}`, formData);
+}
+
 
   async getRelationalManager(data: PaginationData): Promise<APIResponse> {
     const searchParam = data.search ? `&search=${data.search}` : '';
