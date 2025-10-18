@@ -3,9 +3,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import Input from '@/components/form/input/InputField';
+import Select from '@/components/form/Select';
 import Label from "@/components/form/Label";
 import { 
     CreateRelationalManagerRequest,
+    Employee,
+    ApiResponseData,
     relationalManagerServiceApi
 } from "@/services/relationalManagerServiceApi";
 
@@ -14,38 +17,48 @@ interface CreateRelationalManagerProps {
   onClose: () => void;
 }
 
-interface Employee {
-  id: number;
-  name: string;
-  email: string;
-}
-
 const DEFAULT_RELATIONAL_MANAGER_DATA: CreateRelationalManagerRequest = {
   name: "",
   mobileNumber: "",
   email: "",
   type: "employee",
   employeeId: undefined,
+  appointeeName: "",
+  profilePicture: undefined,
+  description: "",
   isActive: true,
 };
 
 export default function CreateRelationalManager({ isOpen, onClose }: CreateRelationalManagerProps) {
   const router = useRouter();
   const [relationalManagerMetadata, setRelationalManagerMetadata] = useState<CreateRelationalManagerRequest>(DEFAULT_RELATIONAL_MANAGER_DATA);
-  const [employeeResults, setEmployeeResults] = useState<Employee[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
   const [isLoadingbutton, setIsLoadingbutton] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
-  const fetchEmployees = useCallback(async (query?: string) => {
+  const fetchEmployees = useCallback(async () => {
     try {
       setIsLoadingEmployees(true);
-      const response = await relationalManagerServiceApi.searchEmployees({ search: query || "" });
-      const responseData = response.data as { data: Employee[] };
-      setEmployeeResults(responseData.data);
+      const response = await relationalManagerServiceApi.searchEmployees({ search: "" });
+      
+      // Type-safe handling
+      const responseData = response as unknown as ApiResponseData;
+      let employeeData: Employee[] = [];
+      
+      if (responseData.data) {
+        if (Array.isArray(responseData.data)) {
+          employeeData = responseData.data;
+        } else if ('data' in responseData.data && Array.isArray(responseData.data.data)) {
+          employeeData = responseData.data.data;
+        }
+      }
+      
+      setEmployees(employeeData);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching employees:', error);
+      setEmployees([]);
       toast.error('Failed to fetch employees');
     } finally {
       setIsLoadingEmployees(false);
@@ -53,17 +66,22 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && relationalManagerMetadata.type === 'employee') {
       fetchEmployees();
     }
-  }, [isOpen, fetchEmployees]);
+  }, [isOpen, relationalManagerMetadata.type, fetchEmployees]);
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!relationalManagerMetadata.name) newErrors.name = 'Name is required';
     if (!relationalManagerMetadata.email) newErrors.email = 'Email is required';
     if (!relationalManagerMetadata.mobileNumber) newErrors.phone = 'Phone is required';
-    if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
+    
+    if (relationalManagerMetadata.type === 'employee') {
+      if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
+    } else if (relationalManagerMetadata.type === 'company_appointee') {
+      if (!relationalManagerMetadata.appointeeName) newErrors.appointee = 'Appointee name is required';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -89,29 +107,73 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
 
   const closeModal = () => {
     setRelationalManagerMetadata(DEFAULT_RELATIONAL_MANAGER_DATA);
-    setSearchQuery("");
-    setEmployeeResults([]);
+    setEmployees([]);
     setErrors({});
+    setPreviewImage(null);
     onClose();
   };
 
-  const handleEmployeeSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    
-    const timeoutId = setTimeout(() => {
-      fetchEmployees(query);
-    }, 300);
-    
-    return () => clearTimeout(timeoutId);
+  const handleEmployeeChange = (value: string) => {
+    setRelationalManagerMetadata(prev => ({
+      ...prev,
+      employeeId: Number(value)
+    }));
+  };
+
+  const handleTypeChange = (value: string) => {
+    setRelationalManagerMetadata(prev => ({
+      ...prev,
+      type: value as 'employee' | 'company_appointee',
+      employeeId: undefined,
+      appointeeName: ""
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please upload only PNG, JPG, or JPEG images');
+        return;
+      }
+
+      // Validate file size (e.g., max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
+
+      setRelationalManagerMetadata(prev => ({
+        ...prev,
+        profilePicture: file
+      }));
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setRelationalManagerMetadata(prev => ({
+      ...prev,
+      profilePicture: undefined
+    }));
+    setPreviewImage(null);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black-opacity flex items-center justify-center p-4 z-99999">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md dark:bg-gray-800">
-        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md dark:bg-gray-800 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
           <h2 className="text-xl font-semibold dark:text-white">Create New Relational Manager</h2>
           <button
             onClick={closeModal}
@@ -166,45 +228,112 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
           </div>
 
           <div>
-            <Label htmlFor="employee">Employee *</Label>
-            <div className="relative">
-              <Input
-                id="employee"
-                value={searchQuery}
-                onChange={handleEmployeeSearch}
-                placeholder="Search employees..."
-                error={!!errors.employee}
-              />
-              {isLoadingEmployees && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+            <Label htmlFor="profilePicture">Profile Picture </Label>
+            <div className="mt-2">
+              {previewImage ? (
+                <div className="relative inline-block">
+                  <img 
+                    src={previewImage} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                  >
+                    ×
+                  </button>
                 </div>
-              )}
-              
-              {!isLoadingEmployees && employeeResults.length > 0 && searchQuery && (
-                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                  {employeeResults.map(employee => (
-                    <button
-                      key={employee.id}
-                      type="button"
-                      className="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
-                      onClick={() => {
-                        setRelationalManagerMetadata(prev => ({
-                          ...prev,
-                          employeeId: employee.id
-                        }));
-                        setSearchQuery(employee.name);
-                        setEmployeeResults([]);
-                      }}
-                    >
-                      {employee.name} ({employee.email})
-                    </button>
-                  ))}
-                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <svg className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                    </svg>
+                    <p className="mb-1 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="font-semibold">Click to upload</span>
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG or JPEG (Max 5MB)</p>
+                  </div>
+                  <input
+                    id="profilePicture"
+                    type="file"
+                    accept=".png,.jpg,.jpeg"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
               )}
             </div>
-            {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
           </div>
+
+          <div>
+            <Label htmlFor="description">Description </Label>
+            <textarea
+              id="description"
+              rows={3}
+              value={relationalManagerMetadata.description || ""}
+              onChange={(e) => setRelationalManagerMetadata(prev => ({
+                ...prev,
+                description: e.target.value
+              }))}
+              className="w-full rounded-lg border border-gray-200 bg-transparent py-2.5 px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:text-white/90"
+              placeholder="Enter description..."
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="type">Type *</Label>
+            <Select
+              defaultValue={relationalManagerMetadata.type}
+              onChange={handleTypeChange}
+              options={[
+                { value: "employee", label: "Employee" },
+                { value: "company_appointee", label: "Company Appointee" }
+              ]}
+            />
+          </div>
+
+          {relationalManagerMetadata.type === 'employee' ? (
+            <div>
+              <Label htmlFor="employee">Employee *</Label>
+              {isLoadingEmployees ? (
+                <div className="flex items-center justify-center py-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+                  <span className="ml-2 text-sm text-gray-600">Loading employees...</span>
+                </div>
+              ) : (
+                <Select
+                  defaultValue={relationalManagerMetadata.employeeId ? String(relationalManagerMetadata.employeeId) : ""}
+                  onChange={handleEmployeeChange}
+                  options={[
+                    { value: "", label: "Select an employee" },
+                    ...employees.map(emp => ({
+                      value: String(emp.id),
+                      label: `${emp.name} (${emp.email})`
+                    }))
+                  ]}
+                />
+              )}
+              {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
+            </div>
+          ) : (
+            <div>
+              <Label htmlFor="appointeeName">Appointee Name *</Label>
+              <Input
+                id="appointeeName"
+                value={relationalManagerMetadata.appointeeName || ""}
+                onChange={(e) => setRelationalManagerMetadata(prev => ({
+                  ...prev,
+                  appointeeName: e.target.value
+                }))}
+                error={!!errors.appointee}
+                placeholder="Enter appointee name"
+              />
+              {errors.appointee && <p className="text-red-500 text-sm mt-1">{errors.appointee}</p>}
+            </div>
+          )}
 
           <div>
             <Label htmlFor="isActive">Status</Label>
@@ -242,9 +371,9 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
             <button
               disabled={isLoadingbutton}
               type="submit"
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              Create Relational Manager
+              {isLoadingbutton ? 'Creating...' : 'Create Relational Manager'}
             </button>
           </div>
         </form>

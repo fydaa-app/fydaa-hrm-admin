@@ -15,8 +15,11 @@ export interface RelationalManagerTableProps {
     name: string;
     mobileNumber: string;
     email: string;
-    type: string;
+    type: 'employee' | 'company_appointee';
     employeeId?: number;
+    appointeeName?: string;
+    profilePicture?: string;
+    description?: string;
     isActive: boolean;
     createdAt: string;
     employee?: {
@@ -33,8 +36,11 @@ export interface RelationalManager {
   name: string;
   email: string;
   mobileNumber: string;
-  type: string;
+  type: 'employee' | 'company_appointee';
   employeeId?: number;
+  appointeeName?: string;
+  profilePicture?: string;
+  description?: string;
   isActive: boolean;
   employee?: {
     id: number;
@@ -59,7 +65,7 @@ export default function RelationalManagerTable({
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
       <div className="max-w-full overflow-x-auto">
-        <div className="min-w-[1200px]">
+        <div className="min-w-[1400px]">
           {error && <div className="m-4"><p style={{ color: "red" }}>{error}</p></div>}
           {!error && relationalManagers.length > 0 ? (
             <Table>
@@ -82,7 +88,10 @@ export default function RelationalManagerTable({
                     Type
                   </TableCell>
                   <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
-                    Employee
+                    Employee/Appointee
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
+                    Description
                   </TableCell>
                   <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
                     Status
@@ -102,6 +111,13 @@ export default function RelationalManagerTable({
                     </TableCell>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <div className="flex items-center gap-3">
+                        {relationalManager.profilePicture && (
+                          <img 
+                            src={relationalManager.profilePicture} 
+                            alt={relationalManager.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        )}
                         <div>
                           <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
                             {relationalManager.name}
@@ -116,10 +132,12 @@ export default function RelationalManagerTable({
                       {relationalManager.email}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      <span className="capitalize">{relationalManager.type}</span>
+                      <span className="capitalize">
+                        {relationalManager.type === 'employee' ? 'Employee' : 'Company Appointee'}
+                      </span>
                     </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {relationalManager.employee ? (
+                      {relationalManager.type === 'employee' && relationalManager.employee ? (
                         <div>
                           <div className="font-medium text-gray-800 dark:text-white/90">
                             {relationalManager.employee.name}
@@ -128,10 +146,23 @@ export default function RelationalManagerTable({
                             {relationalManager.employee.email}
                           </div>
                         </div>
+                      ) : relationalManager.type === 'company_appointee' && relationalManager.appointeeName ? (
+                        <div className="font-medium text-gray-800 dark:text-white/90">
+                          {relationalManager.appointeeName}
+                        </div>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
-                    </TableCell>         
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {relationalManager.description ? (
+                        <div className="max-w-xs truncate" title={relationalManager.description}>
+                          {relationalManager.description}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
                     <TableCell className="px-4 py-3 text-start text-theme-sm">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         relationalManager.isActive 

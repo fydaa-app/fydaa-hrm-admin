@@ -6,8 +6,11 @@ export interface RelationalManagerDetails {
   name: string;
   email: string;
   mobileNumber: string;
-  type: string;
+  type: 'employee' | 'company_appointee';
   employeeId?: number;
+  appointeeName?: string;
+  profilePicture?: string;
+  description?: string;
   isActive?: boolean;
   employee?: {
     id: number;
@@ -20,8 +23,11 @@ export interface CreateRelationalManagerRequest {
   name: string;
   email: string;
   mobileNumber: string;
-  type: string;
+  type: 'employee' | 'company_appointee';
   employeeId?: number;
+  appointeeName?: string;
+  profilePicture?: File | string;
+  description?: string;
   isActive?: boolean;
 }
 
@@ -38,21 +44,77 @@ export interface EmployeeSearchData {
   search: string;
 }
 
+export interface Employee {
+  id: number;
+  name: string;
+  email: string;
+}
+
+// Type for API response data
+export interface ApiResponseData {
+  data?: Employee[] | {
+    data: Employee[];
+  };
+}
+
 class RelationalManagerServiceApi extends API {
 
-  async createRelationalManager(data: CreateRelationalManagerRequest): Promise<APIResponse> {    
-    return this.post(ApiType.private, `${this.baseUrl}/referrals/relationship-manager`, {
-      name: data.name,
-      email: data.email,
-      mobileNumber: data.mobileNumber,
-      type: data.type,
-      employeeId: data.employeeId,
-      isActive: data.isActive ?? true,
-    });
+  async createRelationalManager(data: CreateRelationalManagerRequest): Promise<APIResponse> {
+    const formData = new FormData();
+    
+    formData.append('name', data.name);
+    formData.append('email', data.email);
+    formData.append('mobileNumber', data.mobileNumber);
+    formData.append('type', data.type);
+    
+    if (data.type === 'employee' && data.employeeId) {
+      formData.append('employeeId', data.employeeId.toString());
+    }
+    
+    if (data.type === 'company_appointee' && data.appointeeName) {
+      formData.append('appointeeName', data.appointeeName);
+    }
+    
+    if (data.profilePicture instanceof File) {
+      formData.append('profilePicture', data.profilePicture);
+    }
+    
+    if (data.description) {
+      formData.append('description', data.description);
+    }
+    
+    formData.append('isActive', String(data.isActive ?? true));
+    
+    return this.post(ApiType.private, `${this.baseUrl}/referrals/relationship-manager`, formData);
   }
 
   async updateRelationalManager(id: number, data: UpdateRelationalManagerRequest): Promise<APIResponse> {
-    return this.patch(ApiType.private, `${this.baseUrl}/referrals/relationship-manager/${id}`, data);
+    const formData = new FormData();
+    
+    formData.append('name', data.name);
+    formData.append('email', data.email);
+    formData.append('mobileNumber', data.mobileNumber);
+    formData.append('type', data.type);
+    
+    if (data.type === 'employee' && data.employeeId) {
+      formData.append('employeeId', data.employeeId.toString());
+    }
+    
+    if (data.type === 'company_appointee' && data.appointeeName) {
+      formData.append('appointeeName', data.appointeeName);
+    }
+    
+    if (data.profilePicture instanceof File) {
+      formData.append('profilePicture', data.profilePicture);
+    }
+    
+    if (data.description) {
+      formData.append('description', data.description);
+    }
+    
+    formData.append('isActive', String(data.isActive ?? true));
+    
+    return this.patch(ApiType.private, `${this.baseUrl}/referrals/relationship-manager/${id}`, formData);
   }
 
   async getRelationalManager(data: PaginationData): Promise<APIResponse> {
@@ -65,8 +127,8 @@ class RelationalManagerServiceApi extends API {
   }
 
   async searchEmployees(data: EmployeeSearchData): Promise<APIResponse> {
-    const searchParam = data.search ? `?search=${data.search}` : '';
-    return this.get(ApiType.private, `${this.baseUrl}/referrals/employees${searchParam}`);
+    const searchParam = data.search ? `search=${data.search}` : '';
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/employee-list?limit=100&${searchParam}`);
   }
 
 }

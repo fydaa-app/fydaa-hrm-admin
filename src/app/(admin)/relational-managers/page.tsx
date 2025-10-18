@@ -20,8 +20,11 @@ interface RelationalManagerList {
     name: string;
     mobileNumber: string;
     email: string;
-    type: string;
+    type: 'employee' | 'company_appointee';
     employeeId?: number;
+    appointeeName?: string;
+    profilePicture?: string;
+    description?: string;
     isActive: boolean;
     createdAt: string;
     employee?: Employee;
