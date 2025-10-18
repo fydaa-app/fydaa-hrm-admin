@@ -1,9 +1,5 @@
-// ==========================================
-// FILE: components/relational-manager/CreateRelationalManager.tsx
-// ==========================================
-
 "use client";
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import Input from '@/components/form/input/InputField';
@@ -18,34 +14,56 @@ interface CreateRelationalManagerProps {
   onClose: () => void;
 }
 
-const DEFAULT_RELATIONAL_MANAGER_DATA: Omit<CreateRelationalManagerRequest, 'photo' | 'attachment1' | 'attachment2'> = {
+interface Employee {
+  id: number;
+  name: string;
+  email: string;
+}
+
+const DEFAULT_RELATIONAL_MANAGER_DATA: CreateRelationalManagerRequest = {
   name: "",
   mobileNumber: "",
   email: "",
-  description: "",
-  age: 0,
-  experienceYears: 0,
+  type: "employee",
+  employeeId: undefined,
   isActive: true,
 };
 
 export default function CreateRelationalManager({ isOpen, onClose }: CreateRelationalManagerProps) {
   const router = useRouter();
-  const [relationalManagerMetadata, setRelationalManagerMetadata] = useState(DEFAULT_RELATIONAL_MANAGER_DATA);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [attachment1, setAttachment1] = useState<File | null>(null);
-  const [attachment2, setAttachment2] = useState<File | null>(null);
+  const [relationalManagerMetadata, setRelationalManagerMetadata] = useState<CreateRelationalManagerRequest>(DEFAULT_RELATIONAL_MANAGER_DATA);
+  const [employeeResults, setEmployeeResults] = useState<Employee[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoadingButton, setIsLoadingButton] = useState(false);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
+  const [isLoadingbutton, setIsLoadingbutton] = useState(false);
+  
+  const fetchEmployees = useCallback(async (query?: string) => {
+    try {
+      setIsLoadingEmployees(true);
+      const response = await relationalManagerServiceApi.searchEmployees({ search: query || "" });
+      const responseData = response.data as { data: Employee[] };
+      setEmployeeResults(responseData.data);
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to fetch employees');
+    } finally {
+      setIsLoadingEmployees(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchEmployees();
+    }
+  }, [isOpen, fetchEmployees]);
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!relationalManagerMetadata.name) newErrors.name = 'Name is required';
     if (!relationalManagerMetadata.email) newErrors.email = 'Email is required';
-    if (!relationalManagerMetadata.mobileNumber) newErrors.mobileNumber = 'Mobile number is required';
-    if (!relationalManagerMetadata.description) newErrors.description = 'Description is required';
-    if (!relationalManagerMetadata.age || relationalManagerMetadata.age <= 0) newErrors.age = 'Valid age is required';
-    if (!relationalManagerMetadata.experienceYears || relationalManagerMetadata.experienceYears < 0) newErrors.experienceYears = 'Valid experience is required';
-    if (!photo) newErrors.photo = 'Photo is required';
+    if (!relationalManagerMetadata.mobileNumber) newErrors.phone = 'Phone is required';
+    if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -54,15 +72,9 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
   const handleCreateRelationalManager = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setIsLoadingButton(true);
-    
+    setIsLoadingbutton(true);
     try {
-      await relationalManagerServiceApi.createRelationalManager({
-        ...relationalManagerMetadata,
-        photo: photo!,
-        attachment1: attachment1 || undefined,
-        attachment2: attachment2 || undefined,
-      });     
+      await relationalManagerServiceApi.createRelationalManager(relationalManagerMetadata);     
        
       toast.success('Relational Manager created successfully');
       router.refresh();
@@ -70,52 +82,40 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
     } catch (error) {
       console.log(error);  
       toast.error('Failed to create relational manager');
-    } finally {
-      setIsLoadingButton(false);
+    } finally{
+      setIsLoadingbutton(false);
     }
   };
 
   const closeModal = () => {
     setRelationalManagerMetadata(DEFAULT_RELATIONAL_MANAGER_DATA);
-    setPhoto(null);
-    setAttachment1(null);
-    setAttachment2(null);
+    setSearchQuery("");
+    setEmployeeResults([]);
     setErrors({});
     onClose();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'photo' | 'attachment1' | 'attachment2') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size should be less than 5MB');
-        return;
-      }
-      
-      if (fileType === 'photo') {
-        if (!file.type.startsWith('image/')) {
-          toast.error('Photo must be an image file');
-          return;
-        }
-        setPhoto(file);
-      } else if (fileType === 'attachment1') {
-        setAttachment1(file);
-      } else if (fileType === 'attachment2') {
-        setAttachment2(file);
-      }
-    }
+  const handleEmployeeSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    const timeoutId = setTimeout(() => {
+      fetchEmployees(query);
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black-opacity flex items-center justify-center p-4 z-99999">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-gray-800">
-        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md dark:bg-gray-800">
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
           <h2 className="text-xl font-semibold dark:text-white">Create New Relational Manager</h2>
           <button
             onClick={closeModal}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-300 text-2xl"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-300"
           >
             ×
           </button>
@@ -136,116 +136,74 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={relationalManagerMetadata.email}
-                onChange={(e) => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  email: e.target.value
-                }))}
-                error={!!errors.email}
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="mobileNumber">Mobile Number *</Label>
-              <Input
-                id="mobileNumber"
-                value={relationalManagerMetadata.mobileNumber}
-                onChange={(e) => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  mobileNumber: e.target.value
-                }))}
-                error={!!errors.mobileNumber}
-              />
-              {errors.mobileNumber && <p className="text-red-500 text-sm mt-1">{errors.mobileNumber}</p>}
-            </div>
-          </div>
-
           <div>
-            <Label htmlFor="description">Description *</Label>
-            <textarea
-              id="description"
-              value={relationalManagerMetadata.description}
+            <Label htmlFor="email">Email *</Label>
+            <Input
+              id="email"
+              type="email"
+              value={relationalManagerMetadata.email}
               onChange={(e) => setRelationalManagerMetadata(prev => ({
                 ...prev,
-                description: e.target.value
+                email: e.target.value
               }))}
-              className="w-full rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:text-white/90"
-              rows={4}
+              error={!!errors.email}
             />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="age">Age *</Label>
+          <div>
+            <Label htmlFor="phone">Phone *</Label>
+            <Input
+              id="phone"
+              value={relationalManagerMetadata.mobileNumber}
+              onChange={(e) => setRelationalManagerMetadata(prev => ({
+                ...prev,
+                mobileNumber: e.target.value
+              }))}
+              error={!!errors.phone}
+            />
+            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}           
+          </div>
+
+          <div>
+            <Label htmlFor="employee">Employee *</Label>
+            <div className="relative">
               <Input
-                id="age"
-                type="number"
-                value={relationalManagerMetadata.age || ''}
-                onChange={(e) => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  age: parseInt(e.target.value) || 0
-                }))}
-                error={!!errors.age}
+                id="employee"
+                value={searchQuery}
+                onChange={handleEmployeeSearch}
+                placeholder="Search employees..."
+                error={!!errors.employee}
               />
-              {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age}</p>}
+              {isLoadingEmployees && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                </div>
+              )}
+              
+              {!isLoadingEmployees && employeeResults.length > 0 && searchQuery && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                  {employeeResults.map(employee => (
+                    <button
+                      key={employee.id}
+                      type="button"
+                      className="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
+                      onClick={() => {
+                        setRelationalManagerMetadata(prev => ({
+                          ...prev,
+                          employeeId: employee.id
+                        }));
+                        setSearchQuery(employee.name);
+                        setEmployeeResults([]);
+                      }}
+                    >
+                      {employee.name} ({employee.email})
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-
-            <div>
-              <Label htmlFor="experienceYears">Experience (Years) *</Label>
-              <Input
-                id="experienceYears"
-                type="number"
-                value={relationalManagerMetadata.experienceYears || ''}
-                onChange={(e) => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  experienceYears: parseInt(e.target.value) || 0
-                }))}
-                error={!!errors.experienceYears}
-              />
-              {errors.experienceYears && <p className="text-red-500 text-sm mt-1">{errors.experienceYears}</p>}
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="photo">Photo *</Label>
-            <input
-              id="photo"
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleFileChange(e, 'photo')}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-            />
-            {photo && <p className="text-sm text-gray-600 mt-1">Selected: {photo.name}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="attachment1">Attachment 1</Label>
-            <input
-              id="attachment1"
-              type="file"
-              onChange={(e) => handleFileChange(e, 'attachment1')}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-            />
-            {attachment1 && <p className="text-sm text-gray-600 mt-1">Selected: {attachment1.name}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="attachment2">Attachment 2</Label>
-            <input
-              id="attachment2"
-              type="file"
-              onChange={(e) => handleFileChange(e, 'attachment2')}
-              className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
-            />
-            {attachment2 && <p className="text-sm text-gray-600 mt-1">Selected: {attachment2.name}</p>}
+            {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
           </div>
 
           <div>
@@ -282,11 +240,11 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
               Cancel
             </button>
             <button
-              disabled={isLoadingButton}
+              disabled={isLoadingbutton}
               type="submit"
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
             >
-              {isLoadingButton ? 'Creating...' : 'Create Relational Manager'}
+              Create Relational Manager
             </button>
           </div>
         </form>
@@ -294,5 +252,3 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
     </div>
   );
 }
-
-
