@@ -1,7 +1,3 @@
-// ==========================================
-// FILE: components/relational-manager/CreateRelationalManager.tsx
-// ==========================================
-
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';

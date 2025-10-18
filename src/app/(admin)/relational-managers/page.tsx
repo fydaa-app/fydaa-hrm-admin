@@ -1,7 +1,3 @@
-// ==========================================
-// FILE: app/relational-managers/page.tsx
-// ==========================================
-
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ComponentCard from "@/components/common/ComponentCard";
