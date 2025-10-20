@@ -1,49 +1,37 @@
-// ==========================================
-// FILE: services/relationalManagerServiceApi.ts
-// ==========================================
-
 import { settings } from "@/helpers/settings/config";
 import API, { ApiType, APIResponse } from "./index";
 
 export interface RelationalManagerDetails {
   id: number;
   name: string;
-  mobileNumber: string;
   email: string;
-  description: string;
-  age: number;
-  experienceYears: number;
-  photo: string;
-  attachment1?: string;
-  attachment2?: string;
-  isActive: boolean;
+  mobileNumber: string;
+  type: 'employee' | 'company_appointee';
+  employeeId?: number;  // Only populated when type='employee'
+  profilePicture?: string;
+  description?: string;
+  isActive?: boolean;
+  employee?: {          // Only populated when type='employee'
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 export interface CreateRelationalManagerRequest {
   name: string;
-  mobileNumber: string;
   email: string;
-  description: string;
-  age: number;
-  experienceYears: number;
-  photo: File;
-  attachment1?: File;
-  attachment2?: File;
-  isActive: boolean;
+  mobileNumber: string;
+  type: 'employee' | 'company_appointee';
+  employeeId?: number;  // Only for type='employee'
+  profilePicture?: File | string;
+  description?: string;
+  isActive?: boolean;
 }
 
-export interface UpdateRelationalManagerRequest {
+
+export interface UpdateRelationalManagerRequest extends CreateRelationalManagerRequest {
   id: number;
-  name: string;
-  mobileNumber: string;
-  email: string;
-  description: string;
-  age: number;
-  experienceYears: number;
-  photo: File | string;
-  attachment1?: File | string;
-  attachment2?: File | string;
-  isActive: boolean;
 }
 
 export interface PaginationData {
@@ -51,73 +39,93 @@ export interface PaginationData {
   search?: string;
 }
 
+export interface EmployeeSearchData {
+  search: string;
+}
+
+export interface Employee {
+  id: number;
+  name: string;
+  email: string;
+}
+
+// Type for API response data
+export interface ApiResponseData {
+  data?: Employee[] | {
+    data: Employee[];
+  };
+}
+
 class RelationalManagerServiceApi extends API {
+
   async createRelationalManager(data: CreateRelationalManagerRequest): Promise<APIResponse> {
-    const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('mobileNumber', data.mobileNumber);
-    formData.append('email', data.email);
-    formData.append('description', data.description);
-    formData.append('age', data.age.toString());
-    formData.append('experienceYears', data.experienceYears.toString());
-    formData.append('isActive', data.isActive.toString());
-
-    if (data.photo) {
-      formData.append('photo', data.photo);
-    }
-    if (data.attachment1) {
-      formData.append('attachment1', data.attachment1);
-    }
-    if (data.attachment2) {
-      formData.append('attachment2', data.attachment2);
-    }
-
-    return this.post(ApiType.private, `${this.baseUrl}/relational-managers/create`, formData);
+  const formData = new FormData();
+  
+  formData.append('name', data.name);
+  formData.append('email', data.email);
+  formData.append('mobileNumber', data.mobileNumber);
+  formData.append('type', data.type);
+  
+  // Only add employeeId when type is 'employee'
+  if (data.type === 'employee' && data.employeeId) {
+    formData.append('employeeId', data.employeeId.toString());
   }
+  
+  if (data.profilePicture instanceof File) {
+    formData.append('profilePicture', data.profilePicture);
+  }
+  
+  if (data.description) {
+    formData.append('description', data.description);
+  }
+  
+  formData.append('isActive', String(data.isActive ?? true));
+  
+  return this.post(ApiType.private, `${this.baseUrl}/referrals/relationship-manager`, formData);
+}
+
 
   async updateRelationalManager(id: number, data: UpdateRelationalManagerRequest): Promise<APIResponse> {
-    const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('mobileNumber', data.mobileNumber);
-    formData.append('email', data.email);
-    formData.append('description', data.description);
-    formData.append('age', data.age.toString());
-    formData.append('experienceYears', data.experienceYears.toString());
-    formData.append('isActive', data.isActive.toString());
-
-    if (data.photo instanceof File) {
-      formData.append('photo', data.photo);
-    }
-    if (data.attachment1 instanceof File) {
-      formData.append('attachment1', data.attachment1);
-    }
-    if (data.attachment2 instanceof File) {
-      formData.append('attachment2', data.attachment2);
-    }
-
-    return this.patch(ApiType.private, `${this.baseUrl}/relational-managers/${id}`, formData);
+  const formData = new FormData();
+  
+  formData.append('name', data.name);
+  formData.append('email', data.email);
+  formData.append('mobileNumber', data.mobileNumber);
+  formData.append('type', data.type);
+  
+  // Only add employeeId when type is 'employee'
+  if (data.type === 'employee' && data.employeeId) {
+    formData.append('employeeId', data.employeeId.toString());
   }
+  
+  if (data.profilePicture instanceof File) {
+    formData.append('profilePicture', data.profilePicture);
+  }
+  
+  if (data.description) {
+    formData.append('description', data.description);
+  }
+  
+  formData.append('isActive', String(data.isActive ?? true));
+  
+  return this.patch(ApiType.private, `${this.baseUrl}/referrals/relationship-manager/${id}`, formData);
+}
 
-  async getRelationalManagers(data: PaginationData): Promise<APIResponse> {
-    return this.get(
-      ApiType.private,
-      `${this.baseUrl}/relational-managers/list?page=${data.page}&search=${data.search || ''}`
-    );
+
+  async getRelationalManager(data: PaginationData): Promise<APIResponse> {
+    const searchParam = data.search ? `&search=${data.search}` : '';
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/relationship-manager?page=${data.page}${searchParam}`);
   }
 
   async deleteRelationalManager(id: number): Promise<APIResponse> {
-    return this.delete(ApiType.private, `${this.baseUrl}/relational-managers/${id}`);
+    return this.delete(ApiType.private, `${this.baseUrl}/referrals/relationship-manager/${id}`);
   }
 
-  async getRelationalManagerStats(): Promise<APIResponse> {
-    return this.get(ApiType.private, `${this.baseUrl}/relational-managers/stats`);
+  async searchEmployees(data: EmployeeSearchData): Promise<APIResponse> {
+    const searchParam = data.search ? `search=${data.search}` : '';
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/employee-list?limit=100&${searchParam}`);
   }
 
-  async getRecentRelationalManagers(): Promise<APIResponse> {
-    return this.get(ApiType.private, `${this.baseUrl}/relational-managers/recent`);
-  }
 }
 
-export const relationalManagerServiceApi = new RelationalManagerServiceApi(settings.RELATIONAL_MANAGER_SERVICE);
-
-
+export const relationalManagerServiceApi = new RelationalManagerServiceApi(settings.EMPLOYEE_SERVICE);
