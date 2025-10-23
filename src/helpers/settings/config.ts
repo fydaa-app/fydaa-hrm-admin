@@ -34,7 +34,7 @@ const envSettingsMap: ISettings = {
         STUDENT_SERVICE: 'http://localhost:3000',
     },
     beta: {
-        ADVISOR_SERVICE :``,//added for the new advisor page
+        ADVISOR_SERVICE :`http://localhost:3005`,//added for the new advisor page
         RELATIONAL_MANAGER_SERVICE :`http://localhost:3005`,// UPDATE THIS for the new  manager page 
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
         AUTH_SERVICE: 'https://referral.fydaa.in', // Removed /auth/signin to match the new URL structure
@@ -46,8 +46,8 @@ const envSettingsMap: ISettings = {
         STUDENT_SERVICE: 'https://auth-stage.fydaa.com',
     },
     prod: {
-        ADVISOR_SERVICE :`https://crm-prod.fydaa.com`,//added for the new advisor page 
-        RELATIONAL_MANAGER_SERVICE :`https://crm-prod.fydaa.com`,// UPDATE THIS for the new  manager page 
+        ADVISOR_SERVICE :``,//added for the new advisor page 
+        RELATIONAL_MANAGER_SERVICE :`http://localhost:3005`,// UPDATE THIS for the new  manager page 
         INTERNAL_SERVICE: `${APP_DOMAIN}/api`,
         AUTH_SERVICE: 'https://crm-prod.fydaa.com', // Removed /api to match the new URL structure
         API_SERVICE: 'https://crm-prod.fydaa.com',

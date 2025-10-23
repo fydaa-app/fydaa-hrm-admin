@@ -1,18 +1,14 @@
-// ==========================================
-// FILE: services/advisorServiceApi.ts
-// ==========================================
-
 import { settings } from "@/helpers/settings/config";
 import API, { ApiType, APIResponse } from "./index";
 
 export interface AdvisorDetails {
   id: number;
   name: string;
-  mobileNumber: string;
+  mobile: string;
   email: string;
   description: string;
   age: number;
-  experienceYears: number;
+  experienceInYears: number;
   photo: string;
   attachment1?: string;
   attachment2?: string;
@@ -21,11 +17,11 @@ export interface AdvisorDetails {
 
 export interface CreateAdvisorRequest {
   name: string;
-  mobileNumber: string;
+  mobile: string;
   email: string;
   description: string;
   age: number;
-  experienceYears: number;
+  experienceInYears: number;
   photo: File;
   attachment1?: File;
   attachment2?: File;
@@ -35,11 +31,11 @@ export interface CreateAdvisorRequest {
 export interface UpdateAdvisorRequest {
   id: number;
   name: string;
-  mobileNumber: string;
+  mobile: string;
   email: string;
   description: string;
   age: number;
-  experienceYears: number;
+  experienceInYears: number;
   photo: File | string;
   attachment1?: File | string;
   attachment2?: File | string;
@@ -60,11 +56,11 @@ class AdvisorServiceApi extends API {
     // Create FormData for file uploads
     const formData = new FormData();
     formData.append('name', data.name);
-    formData.append('mobileNumber', data.mobileNumber);
+    formData.append('mobile', data.mobile);
     formData.append('email', data.email);
     formData.append('description', data.description);
     formData.append('age', data.age.toString());
-    formData.append('experienceYears', data.experienceYears.toString());
+    formData.append('experienceInYears', data.experienceInYears.toString());
     formData.append('isActive', data.isActive.toString());
     
     if (data.photo) {
@@ -78,7 +74,7 @@ class AdvisorServiceApi extends API {
     }
 
     // TODO: Replace with actual endpoint URL
-    return this.post(ApiType.private, `${this.baseUrl}/advisors/create`, formData);
+    return this.post(ApiType.private, `${this.baseUrl}/referrals/advisor`, formData);
   }
 
   // TODO: Connect this method to your backend API endpoint for updating advisors
@@ -87,11 +83,11 @@ class AdvisorServiceApi extends API {
   async updateAdvisor(id: number, data: UpdateAdvisorRequest): Promise<APIResponse> {
     const formData = new FormData();
     formData.append('name', data.name);
-    formData.append('mobileNumber', data.mobileNumber);
+    formData.append('mobile', data.mobile);
     formData.append('email', data.email);
     formData.append('description', data.description);
     formData.append('age', data.age.toString());
-    formData.append('experienceYears', data.experienceYears.toString());
+    formData.append('experienceInYears', data.experienceInYears.toString());
     formData.append('isActive', data.isActive.toString());
     
     // Only append files if they are File objects (new uploads)
@@ -106,7 +102,7 @@ class AdvisorServiceApi extends API {
     }
 
     // TODO: Replace with actual endpoint URL
-    return this.patch(ApiType.private, `${this.baseUrl}/advisors/${id}`, formData);
+    return this.patch(ApiType.private, `${this.baseUrl}/referrals/advisor/${id}`, formData);
   }
 
   // TODO: Connect this method to your backend API endpoint for fetching advisors list
@@ -116,7 +112,7 @@ class AdvisorServiceApi extends API {
     // TODO: Replace with actual endpoint URL
     return this.get(
       ApiType.private,
-      `${this.baseUrl}/advisors/list?page=${data.page}&search=${data.search || ''}`
+      `${this.baseUrl}/referrals/advisor?page=${data.page}&search=${data.search || ''}`
     );
   }
 
@@ -124,24 +120,9 @@ class AdvisorServiceApi extends API {
   // Expected endpoint: DELETE /api/advisors/:id
   async deleteAdvisor(id: number): Promise<APIResponse> {
     // TODO: Replace with actual endpoint URL
-    return this.delete(ApiType.private, `${this.baseUrl}/advisors/${id}`);
+    return this.delete(ApiType.private, `${this.baseUrl}/referrals/advisor/${id}`);
   }
 
-  // TODO: Connect this method to your backend API endpoint for fetching advisor stats
-  // Expected endpoint: GET /api/advisors/stats
-  // Expected response: { totalAdvisors: number, activeAdvisors: number, avgExperience: number }
-  async getAdvisorStats(): Promise<APIResponse> {
-    // TODO: Replace with actual endpoint URL
-    return this.get(ApiType.private, `${this.baseUrl}/advisors/stats`);
-  }
-
-  // TODO: Connect this method to your backend API endpoint for fetching recent advisors
-  // Expected endpoint: GET /api/advisors/recent
-  // Expected response: { data: AdvisorDetails[] }
-  async getRecentAdvisors(): Promise<APIResponse> {
-    // TODO: Replace with actual endpoint URL
-    return this.get(ApiType.private, `${this.baseUrl}/advisors/recent`);
-  }
 }
 
 // TODO: Add ADVISOR_SERVICE URL to settings.ts config file

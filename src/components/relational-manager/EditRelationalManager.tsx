@@ -8,8 +8,8 @@ import Label from "@/components/form/Label";
 import { 
     UpdateRelationalManagerRequest,
     RelationalManagerDetails,
-    Employee,
     ApiResponseData,
+    Employee,
     relationalManagerServiceApi
 } from "@/services/relationalManagerServiceApi";
 
@@ -40,31 +40,33 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   const [previewImage, setPreviewImage] = useState<string | null>(relationalManager.profilePicture || null);
   
   const fetchEmployees = useCallback(async () => {
-    try {
-      setIsLoadingEmployees(true);
-      const response = await relationalManagerServiceApi.searchEmployees({ search: "" });
-      
-      // Type-safe handling
-      const responseData = response as unknown as ApiResponseData;
-      let employeeData: Employee[] = [];
-      
-      if (responseData.data) {
-        if (Array.isArray(responseData.data)) {
-          employeeData = responseData.data;
-        } else if ('data' in responseData.data && Array.isArray(responseData.data.data)) {
-          employeeData = responseData.data.data;
-        }
+  try {
+    setIsLoadingEmployees(true);
+    const response = await relationalManagerServiceApi.searchEmployees({ search: "" });
+    
+    // Type-safe handling without 'any'
+    const responseData = response as unknown as ApiResponseData;
+    
+    let employeeData: Employee[] = [];
+    
+    if (responseData.data) {
+      if (Array.isArray(responseData.data)) {
+        employeeData = responseData.data;
+      } else if ('data' in responseData.data && Array.isArray(responseData.data.data)) {
+        employeeData = responseData.data.data;
       }
-      
-      setEmployees(employeeData);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      setEmployees([]);
-      toast.error('Failed to fetch employees');
-    } finally {
-      setIsLoadingEmployees(false);
     }
-  }, []);
+    
+    setEmployees(employeeData);
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    setEmployees([]);
+    toast.error('Failed to fetch employees');
+  } finally {
+    setIsLoadingEmployees(false);
+  }
+}, []);
+
 
   useEffect(() => {
     if (isOpen && relationalManagerMetadata.type === 'employee') {

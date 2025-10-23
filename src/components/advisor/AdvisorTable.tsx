@@ -1,8 +1,3 @@
-
-// ==========================================
-// FILE: components/advisor/AdvisorTable.tsx
-// ==========================================
-
 import React, { useState } from "react";
 import {
   Table,
@@ -18,11 +13,11 @@ export interface AdvisorTableProps {
   advisors: {
     id: number;
     name: string;
-    mobileNumber: string;
+    mobile: string;
     email: string;
     description: string;
     age: number;
-    experienceYears: number;
+    experienceInYears: number;
     photo: string;
     attachment1?: string;
     attachment2?: string;
@@ -35,11 +30,11 @@ export interface AdvisorTableProps {
 export interface Advisor {
   id: number;
   name: string;
-  mobileNumber: string;
+  mobile: string;
   email: string;
   description: string;
   age: number;
-  experienceYears: number;
+  experienceInYears: number;
   photo: string;
   attachment1?: string;
   attachment2?: string;
@@ -150,7 +145,7 @@ export default function AdvisorTable({
                     
                     {/* Mobile */}
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {advisor.mobileNumber}
+                      {advisor.mobile}
                     </TableCell>
                     
                     {/* Email */}
@@ -188,7 +183,7 @@ export default function AdvisorTable({
                     
                     {/* Experience */}
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                      {advisor.experienceYears} {advisor.experienceYears === 1 ? 'year' : 'years'}
+                      {advisor.experienceInYears} {advisor.experienceInYears === 1 ? 'year' : 'years'}
                     </TableCell>
                     
                     {/* Attachments */}
@@ -304,11 +299,11 @@ export default function AdvisorTable({
 //   advisors: {
 //     id: number;
 //     name: string;
-//     mobileNumber: string;
+//     mobile: string;
 //     email: string;
 //     description: string;
 //     age: number;
-//     experienceYears: number;
+//     experienceInYears: number;
 //     photo?: string;
 //     attachment1?: string;
 //     attachment2?: string;
@@ -322,11 +317,11 @@ export default function AdvisorTable({
 // export interface Advisor {
 //   id: number;
 //   name: string;
-//   mobileNumber: string;
+//   mobile: string;
 //   email: string;
 //   description: string;
 //   age: number;
-//   experienceYears: number;
+//   experienceInYears: number;
 //   photo?: string;
 //   attachment1?: string;
 //   attachment2?: string;
@@ -453,7 +448,7 @@ export default function AdvisorTable({
 //                     </TableCell>
                     
 //                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-//                       {advisor.mobileNumber}
+//                       {advisor.mobile}
 //                     </TableCell>
                     
 //                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
@@ -487,7 +482,7 @@ export default function AdvisorTable({
 //                     </TableCell>
                     
 //                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-//                       {advisor.experienceYears} {advisor.experienceYears === 1 ? 'year' : 'years'}
+//                       {advisor.experienceInYears} {advisor.experienceInYears === 1 ? 'year' : 'years'}
 //                     </TableCell>
                     
 //                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">

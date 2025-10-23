@@ -1,7 +1,3 @@
-// ==========================================
-// FILE: components/advisor/CreateAdvisor.tsx
-// ==========================================
-
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -20,11 +16,11 @@ interface CreateAdvisorProps {
 
 const DEFAULT_ADVISOR_DATA: Omit<CreateAdvisorRequest, 'photo' | 'attachment1' | 'attachment2'> = {
   name: "",
-  mobileNumber: "",
+  mobile: "",
   email: "",
   description: "",
   age: 0,
-  experienceYears: 0,
+  experienceInYears: 0,
   isActive: true,
 };
 
@@ -41,10 +37,10 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
     const newErrors: Record<string, string> = {};
     if (!advisorMetadata.name) newErrors.name = 'Name is required';
     if (!advisorMetadata.email) newErrors.email = 'Email is required';
-    if (!advisorMetadata.mobileNumber) newErrors.mobileNumber = 'Mobile number is required';
+    if (!advisorMetadata.mobile) newErrors.mobile = 'Mobile number is required';
     if (!advisorMetadata.description) newErrors.description = 'Description is required';
     if (!advisorMetadata.age || advisorMetadata.age <= 0) newErrors.age = 'Valid age is required';
-    if (!advisorMetadata.experienceYears || advisorMetadata.experienceYears < 0) newErrors.experienceYears = 'Valid experience is required';
+    if (!advisorMetadata.experienceInYears || advisorMetadata.experienceInYears < 0) newErrors.experienceInYears = 'Valid experience is required';
     if (!photo) newErrors.photo = 'Photo is required';
 
     setErrors(newErrors);
@@ -157,17 +153,17 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
             </div>
 
             <div>
-              <Label htmlFor="mobileNumber">Mobile Number *</Label>
+              <Label htmlFor="mobile">Mobile Number *</Label>
               <Input
-                id="mobileNumber"
-                value={advisorMetadata.mobileNumber}
+                id="mobile"
+                value={advisorMetadata.mobile}
                 onChange={(e) => setAdvisorMetadata(prev => ({
                   ...prev,
-                  mobileNumber: e.target.value
+                  mobile: e.target.value
                 }))}
-                error={!!errors.mobileNumber}
+                error={!!errors.mobile}
               />
-              {errors.mobileNumber && <p className="text-red-500 text-sm mt-1">{errors.mobileNumber}</p>}
+              {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
             </div>
           </div>
 
@@ -203,18 +199,18 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
             </div>
 
             <div>
-              <Label htmlFor="experienceYears">Experience (Years) *</Label>
+              <Label htmlFor="experienceInYears">Experience (Years) *</Label>
               <Input
-                id="experienceYears"
+                id="experienceInYears"
                 type="number"
-                value={advisorMetadata.experienceYears || ''}
+                value={advisorMetadata.experienceInYears || ''}
                 onChange={(e) => setAdvisorMetadata(prev => ({
                   ...prev,
-                  experienceYears: parseInt(e.target.value) || 0
+                  experienceInYears: parseInt(e.target.value) || 0
                 }))}
-                error={!!errors.experienceYears}
+                error={!!errors.experienceInYears}
               />
-              {errors.experienceYears && <p className="text-red-500 text-sm mt-1">{errors.experienceYears}</p>}
+              {errors.experienceInYears && <p className="text-red-500 text-sm mt-1">{errors.experienceInYears}</p>}
             </div>
           </div>
 
