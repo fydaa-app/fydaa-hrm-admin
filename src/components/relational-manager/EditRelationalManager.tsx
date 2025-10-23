@@ -39,29 +39,31 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   const [isLoadingButton, setIsLoadingButton] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(relationalManager.profilePicture || null);
   
-  const fetchEmployees = useCallback(async () => {
+const fetchEmployees = useCallback(async () => {
   try {
     setIsLoadingEmployees(true);
     const response = await relationalManagerServiceApi.searchEmployees({ search: "" });
-    
-    // Type-safe handling without 'any'
+    console.log("Full API response:", response);
     const responseData = response as unknown as ApiResponseData;
-    
     let employeeData: Employee[] = [];
-    
-    if (responseData.data) {
-      if (Array.isArray(responseData.data)) {
-        employeeData = responseData.data;
-      } else if ('data' in responseData.data && Array.isArray(responseData.data.data)) {
-        employeeData = responseData.data.data;
-      }
+
+    if (
+      responseData.data &&
+      typeof responseData.data === "object" &&
+      "data" in responseData.data &&
+      responseData.data.data &&
+      typeof responseData.data.data === "object" &&
+      "employees" in responseData.data.data
+    ) {
+      employeeData = responseData.data.data.employees as Employee[];
     }
-    
+
+    console.log("Parsed employees:", employeeData);
     setEmployees(employeeData);
   } catch (error) {
-    console.error('Error fetching employees:', error);
+    console.error("Error fetching employees:", error);
+    toast.error("Failed to fetch employees");
     setEmployees([]);
-    toast.error('Failed to fetch employees');
   } finally {
     setIsLoadingEmployees(false);
   }
