@@ -9,7 +9,7 @@ export interface RelationalManagerDetails {
   mobileNumber: string;
   type: 'employee' | 'company_appointee';
   employeeId?: number;
-  profilePicture?: string;
+  photo?: string; 
   description?: string;
   isActive?: boolean;
   employee?: {
@@ -26,7 +26,7 @@ export interface CreateRelationalManagerRequest {
   mobileNumber: string;
   type: 'employee' | 'company_appointee';
   employeeId?: number;
-  profilePicture?: File | string;
+  photo?: File | string;
   description?: string;
   isActive?: boolean;
 }
@@ -76,8 +76,8 @@ class RelationalManagerServiceApi extends API {
       formData.append('employeeId', data.employeeId.toString());
     }
     
-    if (data.profilePicture instanceof File) {
-      formData.append('profilePicture', data.profilePicture);
+    if (data.photo instanceof File) {
+      formData.append('photo', data.photo);
     }
     
     if (data.description) {
@@ -101,8 +101,8 @@ class RelationalManagerServiceApi extends API {
       formData.append('employeeId', data.employeeId.toString());
     }
     
-    if (data.profilePicture instanceof File) {
-      formData.append('profilePicture', data.profilePicture);
+    if (data.photo instanceof File) {
+      formData.append('photo', data.photo);
     }
     
     if (data.description) {

@@ -23,7 +23,7 @@ interface RelationalManagerList {
     type: 'employee' | 'company_appointee';
     employeeId?: number;
     appointeeName?: string;
-    profilePicture?: string;
+    photo?: string;
     description?: string;
     isActive: boolean;
     createdAt: string;

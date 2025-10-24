@@ -23,7 +23,7 @@ const DEFAULT_RELATIONAL_MANAGER_DATA: CreateRelationalManagerRequest = {
   email: "",
   type: "employee",
   employeeId: undefined,
-  profilePicture: undefined,
+  photo: undefined,
   description: "",
   isActive: true,
 };
@@ -103,23 +103,24 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
     return Object.keys(newErrors).length === 0;
   };
   
-  const handleCreateRelationalManager = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setIsLoadingbutton(true);
-    try {
-      await relationalManagerServiceApi.createRelationalManager(relationalManagerMetadata);
-      toast.success('Relational Manager created successfully');
-      router.refresh();
-      closeModal();
-    } catch (error) {
-      console.log(error);
-      toast.error('Failed to create relational manager');
-    } finally {
-      setIsLoadingbutton(false);
-    }
-  };
-  
+const handleCreateRelationalManager = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  setIsLoadingbutton(true);
+  try {
+    console.log('Creating with photo:', relationalManagerMetadata.photo);
+    await relationalManagerServiceApi.createRelationalManager(relationalManagerMetadata);
+    toast.success('Relational Manager created successfully');
+    router.refresh();
+    closeModal();
+  } catch (error) {
+    console.log(error);
+    toast.error('Failed to create relational manager');
+  } finally {
+    setIsLoadingbutton(false);
+  }
+};
+
   const closeModal = () => {
     setRelationalManagerMetadata(DEFAULT_RELATIONAL_MANAGER_DATA);
     setEmployees([]);
@@ -159,7 +160,7 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
       }
       setRelationalManagerMetadata(prev => ({
         ...prev,
-        profilePicture: file
+        photo: file
       }));
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -172,7 +173,7 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
   const handleRemoveImage = () => {
     setRelationalManagerMetadata(prev => ({
       ...prev,
-      profilePicture: undefined
+      photo: undefined
     }));
     setPreviewImage(null);
   };
@@ -230,7 +231,7 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
           </div>
   
           <div>
-            <Label htmlFor="profilePicture">Profile Picture </Label>
+            <Label htmlFor="photo">Profile Picture </Label>
             <div className="mt-2">
               {previewImage ? (
                 <div className="relative inline-block">
@@ -259,7 +260,7 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
                     <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG or JPEG (Max 5MB)</p>
                   </div>
                   <input
-                    id="profilePicture"
+                    id="photo"
                     type="file"
                     accept=".png,.jpg,.jpeg"
                     onChange={handleFileChange}
