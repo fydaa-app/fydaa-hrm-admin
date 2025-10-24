@@ -28,7 +28,7 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   email: relationalManager.email,
   type: relationalManager.type || "employee",
   employeeId: relationalManager.employeeId,
-  profilePicture: relationalManager.profilePicture || undefined,
+  photo: relationalManager.photo || undefined,
   description: relationalManager.description || "",
   isActive: relationalManager.isActive ?? true
 });
@@ -37,7 +37,7 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
   const [isLoadingButton, setIsLoadingButton] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(relationalManager.profilePicture || null);
+  const [previewImage, setPreviewImage] = useState<string | null>(relationalManager.photo || null);
   
 const fetchEmployees = useCallback(async () => {
   try {
@@ -85,11 +85,11 @@ const fetchEmployees = useCallback(async () => {
       email: relationalManager.email,
       type: relationalManager.type || "employee",
       employeeId: relationalManager.employeeId,
-      profilePicture: relationalManager.profilePicture || undefined,
+      photo: relationalManager.photo || undefined,
       description: relationalManager.description || "",
       isActive: relationalManager.isActive ?? true
     });
-    setPreviewImage(relationalManager.profilePicture || null);
+    setPreviewImage(relationalManager.photo || null);
   }
 }, [isOpen, relationalManager]);
 
@@ -167,7 +167,7 @@ const fetchEmployees = useCallback(async () => {
 
       setRelationalManagerMetadata(prev => ({
         ...prev,
-        profilePicture: file
+        photo: file
       }));
 
       // Create preview
@@ -182,7 +182,7 @@ const fetchEmployees = useCallback(async () => {
   const handleRemoveImage = () => {
     setRelationalManagerMetadata(prev => ({
       ...prev,
-      profilePicture: undefined
+      photo: undefined
     }));
     setPreviewImage(null);
   };
@@ -247,7 +247,7 @@ const fetchEmployees = useCallback(async () => {
           </div>
 
           <div>
-            <Label htmlFor="profilePicture">Profile Picture </Label>
+            <Label htmlFor="photo">Profile Picture </Label>
             <div className="mt-2">
               {previewImage ? (
                 <div className="relative inline-block">
@@ -276,7 +276,7 @@ const fetchEmployees = useCallback(async () => {
                     <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG or JPEG (Max 5MB)</p>
                   </div>
                   <input
-                    id="profilePicture"
+                    id="photo"
                     type="file"
                     accept=".png,.jpg,.jpeg"
                     onChange={handleFileChange}
