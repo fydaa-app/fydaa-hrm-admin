@@ -2,31 +2,38 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import ComponentCard from "@/components/common/ComponentCard";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import CreateRelationalManager from '@/components/relational-manager/CreateRelationalManager';
+import RelationalManagerTable from "@/components/relational-manager/RelationalManagerTable";
 import Pagination from "@/components/tables/Pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { relationalManagerServiceApi } from "@/services/relationalManagerServiceApi";
-import CreateRelationalManager from "@/components/relational-manager/CreateRelationalManager";
-import RelationalManagerTable from "@/components/relational-manager/RelationalManagerTable";
+
+interface Employee {
+    id: number;
+    name: string;
+    email: string;
+}
 
 interface RelationalManagerList {
-  id: number;
-  name: string;
-  mobileNumber: string;
-  email: string;
-  description: string;
-  age: number;
-  experienceYears: number;
-  photo: string;
-  attachment1?: string;
-  attachment2?: string;
-  isActive: boolean;
+    id: number;
+    name: string;
+    mobileNumber: string;
+    email: string;
+    type: 'employee' | 'company_appointee';
+    employeeId?: number;
+    appointeeName?: string;
+    profilePicture?: string;
+    description?: string;
+    isActive: boolean;
+    createdAt: string;
+    employee?: Employee;
 }
 
 interface RelationalManagerApiResponse {
   relationalManagers: RelationalManagerList[];
   error: string | null;
-  totalCount: number;
+  total: number;
   totalPages: number;
 }
 
@@ -35,23 +42,24 @@ async function fetchRelationalManagers(
   searchQuery: string = ""
 ): Promise<RelationalManagerApiResponse> {
   try {
-    const response = await relationalManagerServiceApi.getRelationalManagers({
+    const response = await relationalManagerServiceApi.getRelationalManager({
       page,
       search: searchQuery,
     });
-    
     const responseData = response.data as {
-      data: {
-        relationalManagers: RelationalManagerList[];
-        totalcount: number;
+      data: RelationalManagerList[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
         totalPages: number;
       }
     };
 
     return {
-      relationalManagers: responseData.data.relationalManagers,
-      totalCount: responseData.data.totalcount,
-      totalPages: responseData.data.totalPages,
+      relationalManagers: responseData.data,
+      total: responseData.pagination.total,
+      totalPages: responseData.pagination.totalPages,
       error: null,
     };
   } catch (error: unknown) {
@@ -63,7 +71,7 @@ async function fetchRelationalManagers(
 
     return {
       relationalManagers: [],
-      totalCount: 0,
+      total: 0,
       totalPages: 0,
       error: errorMessage,
     };
@@ -166,12 +174,12 @@ function RelationalManagerListClient() {
       setIsSearching(true);
       const query = searchParams ? searchParams.get("search") || "" : "";
       
-      const { relationalManagers, error, totalCount, totalPages } =
+      const { relationalManagers, error, total, totalPages } =
         await fetchRelationalManagers(page, query);
 
       setRelationalManagers(relationalManagers);
       setError(error);
-      setTotalCount(totalCount);
+      setTotalCount(total);
       setTotalPages(totalPages);
     } catch (err) {
       console.error("Error in fetchData:", err);
@@ -208,10 +216,7 @@ function RelationalManagerListClient() {
 
           <CreateRelationalManager
             isOpen={isModalOpen}
-            onClose={() => {
-              setIsModalOpen(false);
-              fetchData();
-            }}
+            onClose={() => setIsModalOpen(false)}
           />
           
           {isSearching ? (
@@ -239,7 +244,7 @@ function RelationalManagerListClient() {
             </div>
           ) : (
             <>
-              <RelationalManagerTable relationalManagers={relationalManagers} error={error} onUpdate={fetchData} />
+              <RelationalManagerTable relationalManagers={relationalManagers} error={error} />
               {totalCount > 0 && (
                 <Pagination
                   currentPage={page}
