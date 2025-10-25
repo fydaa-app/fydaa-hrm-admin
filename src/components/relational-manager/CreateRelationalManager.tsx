@@ -23,8 +23,7 @@ const DEFAULT_RELATIONAL_MANAGER_DATA: CreateRelationalManagerRequest = {
   email: "",
   type: "employee",
   employeeId: undefined,
-  appointeeName: "",
-  profilePicture: undefined,
+  photo: undefined,
   description: "",
   isActive: true,
 };
@@ -37,73 +36,90 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
   const [isLoadingbutton, setIsLoadingbutton] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [useNativeSelect, setUseNativeSelect] = useState(false); // Toggle native select to isolate issue
   
   const fetchEmployees = useCallback(async () => {
     try {
       setIsLoadingEmployees(true);
       const response = await relationalManagerServiceApi.searchEmployees({ search: "" });
-      
-      // Type-safe handling
+      // console.log("Full API response:", response);
       const responseData = response as unknown as ApiResponseData;
       let employeeData: Employee[] = [];
-      
-      if (responseData.data) {
-        if (Array.isArray(responseData.data)) {
-          employeeData = responseData.data;
-        } else if ('data' in responseData.data && Array.isArray(responseData.data.data)) {
-          employeeData = responseData.data.data;
-        }
+
+      if (
+        responseData.data &&
+        typeof responseData.data === "object" &&
+        "data" in responseData.data &&
+        responseData.data.data &&
+        typeof responseData.data.data === "object" &&
+        "employees" in responseData.data.data
+      ) {
+        employeeData = responseData.data.data.employees as Employee[];
       }
-      
+
+      // console.log("Parsed employees:", employeeData);
       setEmployees(employeeData);
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error("Error fetching employees:", error);
+      toast.error("Failed to fetch employees");
       setEmployees([]);
-      toast.error('Failed to fetch employees');
     } finally {
       setIsLoadingEmployees(false);
     }
   }, []);
-
+  
   useEffect(() => {
     if (isOpen && relationalManagerMetadata.type === 'employee') {
       fetchEmployees();
     }
   }, [isOpen, relationalManagerMetadata.type, fetchEmployees]);
-  
+
+  // const dropdownOptions = [
+  //   { value: "", label: "Select an employee" },
+  //   ...employees.map(emp => ({
+  //     value: String(emp.id),
+  //     label: `${emp.name} (${emp.email})`
+  //   }))
+  // ];
+  // console.log('Dropdown options:', dropdownOptions);
+
+  // const dropdownOptions = [
+  //   { value: "", label: "Select an employee" },
+  //   ...employees.map(emp => ({
+  //     value: String(emp.id),
+  //     label: `${emp.name} (${emp.email})`
+  //   }))
+  // ];
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!relationalManagerMetadata.name) newErrors.name = 'Name is required';
     if (!relationalManagerMetadata.email) newErrors.email = 'Email is required';
     if (!relationalManagerMetadata.mobileNumber) newErrors.phone = 'Phone is required';
-    
     if (relationalManagerMetadata.type === 'employee') {
       if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
-    } else if (relationalManagerMetadata.type === 'company_appointee') {
-      if (!relationalManagerMetadata.appointeeName) newErrors.appointee = 'Appointee name is required';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
-  const handleCreateRelationalManager = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setIsLoadingbutton(true);
-    try {
-      await relationalManagerServiceApi.createRelationalManager(relationalManagerMetadata);     
-       
-      toast.success('Relational Manager created successfully');
-      router.refresh();
-      closeModal();
-    } catch (error) {
-      console.log(error);  
-      toast.error('Failed to create relational manager');
-    } finally{
-      setIsLoadingbutton(false);
-    }
-  };
+  
+const handleCreateRelationalManager = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  setIsLoadingbutton(true);
+  try {
+    console.log('Creating with photo:', relationalManagerMetadata.photo);
+    await relationalManagerServiceApi.createRelationalManager(relationalManagerMetadata);
+    toast.success('Relational Manager created successfully');
+    router.refresh();
+    closeModal();
+  } catch (error) {
+    console.log(error);
+    toast.error('Failed to create relational manager');
+  } finally {
+    setIsLoadingbutton(false);
+  }
+};
 
   const closeModal = () => {
     setRelationalManagerMetadata(DEFAULT_RELATIONAL_MANAGER_DATA);
@@ -112,46 +128,40 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
     setPreviewImage(null);
     onClose();
   };
-
+  
   const handleEmployeeChange = (value: string) => {
+    // console.log('Dropdown selected value:', value);
     setRelationalManagerMetadata(prev => ({
       ...prev,
       employeeId: Number(value)
     }));
   };
-
+  
   const handleTypeChange = (value: string) => {
     setRelationalManagerMetadata(prev => ({
       ...prev,
       type: value as 'employee' | 'company_appointee',
-      employeeId: undefined,
-      appointeeName: ""
+      employeeId: undefined
     }));
   };
-
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
       const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
       if (!validTypes.includes(file.type)) {
         toast.error('Please upload only PNG, JPG, or JPEG images');
         return;
       }
-
-      // Validate file size (e.g., max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
         toast.error('File size must be less than 5MB');
         return;
       }
-
       setRelationalManagerMetadata(prev => ({
         ...prev,
-        profilePicture: file
+        photo: file
       }));
-
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
@@ -159,16 +169,18 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
       reader.readAsDataURL(file);
     }
   };
-
+  
   const handleRemoveImage = () => {
     setRelationalManagerMetadata(prev => ({
       ...prev,
-      profilePicture: undefined
+      photo: undefined
     }));
     setPreviewImage(null);
   };
 
+
   if (!isOpen) return null;
+
 
   return (
     <div className="fixed inset-0 bg-black-opacity flex items-center justify-center p-4 z-99999">
@@ -182,53 +194,44 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
             ×
           </button>
         </div>
-
+  
         <form onSubmit={handleCreateRelationalManager} className="p-4 space-y-4">
           <div>
             <Label htmlFor="name">Name *</Label>
             <Input
               id="name"
               value={relationalManagerMetadata.name}
-              onChange={(e) => setRelationalManagerMetadata(prev => ({
-                ...prev,
-                name: e.target.value
-              }))}
+              onChange={e => setRelationalManagerMetadata(prev => ({ ...prev, name: e.target.value }))}
               error={!!errors.name}
             />
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
           </div>
-
+  
           <div>
             <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
               value={relationalManagerMetadata.email}
-              onChange={(e) => setRelationalManagerMetadata(prev => ({
-                ...prev,
-                email: e.target.value
-              }))}
+              onChange={e => setRelationalManagerMetadata(prev => ({ ...prev, email: e.target.value }))}
               error={!!errors.email}
             />
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
-
+  
           <div>
             <Label htmlFor="phone">Phone *</Label>
             <Input
               id="phone"
               value={relationalManagerMetadata.mobileNumber}
-              onChange={(e) => setRelationalManagerMetadata(prev => ({
-                ...prev,
-                mobileNumber: e.target.value
-              }))}
+              onChange={e => setRelationalManagerMetadata(prev => ({ ...prev, mobileNumber: e.target.value }))}
               error={!!errors.phone}
             />
             {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}           
           </div>
-
+  
           <div>
-            <Label htmlFor="profilePicture">Profile Picture </Label>
+            <Label htmlFor="photo">Profile Picture </Label>
             <div className="mt-2">
               {previewImage ? (
                 <div className="relative inline-block">
@@ -257,7 +260,7 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
                     <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG or JPEG (Max 5MB)</p>
                   </div>
                   <input
-                    id="profilePicture"
+                    id="photo"
                     type="file"
                     accept=".png,.jpg,.jpeg"
                     onChange={handleFileChange}
@@ -267,22 +270,19 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
               )}
             </div>
           </div>
-
+  
           <div>
             <Label htmlFor="description">Description </Label>
             <textarea
               id="description"
               rows={3}
               value={relationalManagerMetadata.description || ""}
-              onChange={(e) => setRelationalManagerMetadata(prev => ({
-                ...prev,
-                description: e.target.value
-              }))}
+              onChange={e => setRelationalManagerMetadata(prev => ({ ...prev, description: e.target.value }))}
               className="w-full rounded-lg border border-gray-200 bg-transparent py-2.5 px-3 text-sm text-gray-800 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:text-white/90"
               placeholder="Enter description..."
             />
           </div>
-
+  
           <div>
             <Label htmlFor="type">Type *</Label>
             <Select
@@ -294,15 +294,30 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
               ]}
             />
           </div>
-
-          {relationalManagerMetadata.type === 'employee' ? (
-            <div>
-              <Label htmlFor="employee">Employee *</Label>
-              {isLoadingEmployees ? (
-                <div className="flex items-center justify-center py-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
-                  <span className="ml-2 text-sm text-gray-600">Loading employees...</span>
-                </div>
+  
+         {relationalManagerMetadata.type === 'employee' && (
+          <div>
+            <Label htmlFor="employee">Employee *</Label>
+            {isLoadingEmployees ? (
+              <div className="flex items-center justify-center py-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+                <span className="ml-2 text-sm text-gray-600">Loading employees...</span>
+              </div>
+            ) : (
+              useNativeSelect ? (
+                // Native select fallback for debugging
+                <select
+                  value={relationalManagerMetadata.employeeId ? String(relationalManagerMetadata.employeeId) : ""}
+                  onChange={e => handleEmployeeChange(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2"
+                >
+                  <option value="">Select an employee</option>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={String(emp.id)}>
+                      {`${emp.name} (${emp.email})`}
+                    </option>
+                  ))}
+                </select>
               ) : (
                 <Select
                   defaultValue={relationalManagerMetadata.employeeId ? String(relationalManagerMetadata.employeeId) : ""}
@@ -315,51 +330,41 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
                     }))
                   ]}
                 />
-              )}
-              {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="appointeeName">Appointee Name *</Label>
-              <Input
-                id="appointeeName"
-                value={relationalManagerMetadata.appointeeName || ""}
-                onChange={(e) => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  appointeeName: e.target.value
-                }))}
-                error={!!errors.appointee}
-                placeholder="Enter appointee name"
-              />
-              {errors.appointee && <p className="text-red-500 text-sm mt-1">{errors.appointee}</p>}
-            </div>
-          )}
-
+              )
+            )}
+            {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
+            <button
+              type="button"
+              className="mt-2 text-blue-600 underline"
+              onClick={() => setUseNativeSelect(!useNativeSelect)}
+            >
+              Toggle native select (debug)
+            </button>
+          </div>
+         )}
+  
           <div>
             <Label htmlFor="isActive">Status</Label>
             <div className="flex items-center mt-2">
               <button
                 type="button"
-                onClick={() => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  isActive: !prev.isActive
-                }))}
+                onClick={() => setRelationalManagerMetadata(prev => ({ ...prev, isActive: !prev.isActive }))}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  relationalManagerMetadata.isActive ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  relationalManagerMetadata.isActive ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"
                 }`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    relationalManagerMetadata.isActive ? 'translate-x-6' : 'translate-x-1'
+                    relationalManagerMetadata.isActive ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
               </button>
               <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                {relationalManagerMetadata.isActive ? 'Active' : 'Inactive'}
+                {relationalManagerMetadata.isActive ? "Active" : "Inactive"}
               </span>
             </div>
           </div>
-
+  
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -373,7 +378,7 @@ export default function CreateRelationalManager({ isOpen, onClose }: CreateRelat
               type="submit"
               className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {isLoadingbutton ? 'Creating...' : 'Create Relational Manager'}
+              {isLoadingbutton ? "Creating..." : "Create Relational Manager"}
             </button>
           </div>
         </form>

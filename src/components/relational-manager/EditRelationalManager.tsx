@@ -8,8 +8,8 @@ import Label from "@/components/form/Label";
 import { 
     UpdateRelationalManagerRequest,
     RelationalManagerDetails,
-    Employee,
     ApiResponseData,
+    Employee,
     relationalManagerServiceApi
 } from "@/services/relationalManagerServiceApi";
 
@@ -22,49 +22,53 @@ interface UpdateRelationalManagerProps {
 export default function UpdateRelationalManager({ isOpen, onClose, relationalManager }: UpdateRelationalManagerProps) {
   const router = useRouter();
   const [relationalManagerMetadata, setRelationalManagerMetadata] = useState<UpdateRelationalManagerRequest>({
-    id: relationalManager.id,
-    name: relationalManager.name,
-    mobileNumber: relationalManager.mobileNumber,
-    email: relationalManager.email,
-    type: relationalManager.type || "employee",
-    employeeId: relationalManager.employeeId,
-    appointeeName: relationalManager.appointeeName || "",
-    profilePicture: relationalManager.profilePicture || undefined,
-    description: relationalManager.description || "",
-    isActive: relationalManager.isActive ?? true
-  });
+  id: relationalManager.id,
+  name: relationalManager.name,
+  mobileNumber: relationalManager.mobileNumber,
+  email: relationalManager.email,
+  type: relationalManager.type || "employee",
+  employeeId: relationalManager.employeeId,
+  photo: relationalManager.photo || undefined,
+  description: relationalManager.description || "",
+  isActive: relationalManager.isActive ?? true
+});
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
   const [isLoadingButton, setIsLoadingButton] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(relationalManager.profilePicture || null);
+  const [previewImage, setPreviewImage] = useState<string | null>(relationalManager.photo || null);
   
-  const fetchEmployees = useCallback(async () => {
-    try {
-      setIsLoadingEmployees(true);
-      const response = await relationalManagerServiceApi.searchEmployees({ search: "" });
-      
-      // Type-safe handling
-      const responseData = response as unknown as ApiResponseData;
-      let employeeData: Employee[] = [];
-      
-      if (responseData.data) {
-        if (Array.isArray(responseData.data)) {
-          employeeData = responseData.data;
-        } else if ('data' in responseData.data && Array.isArray(responseData.data.data)) {
-          employeeData = responseData.data.data;
-        }
-      }
-      
-      setEmployees(employeeData);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      setEmployees([]);
-      toast.error('Failed to fetch employees');
-    } finally {
-      setIsLoadingEmployees(false);
+const fetchEmployees = useCallback(async () => {
+  try {
+    setIsLoadingEmployees(true);
+    const response = await relationalManagerServiceApi.searchEmployees({ search: "" });
+    console.log("Full API response:", response);
+    const responseData = response as unknown as ApiResponseData;
+    let employeeData: Employee[] = [];
+
+    if (
+      responseData.data &&
+      typeof responseData.data === "object" &&
+      "data" in responseData.data &&
+      responseData.data.data &&
+      typeof responseData.data.data === "object" &&
+      "employees" in responseData.data.data
+    ) {
+      employeeData = responseData.data.data.employees as Employee[];
     }
-  }, []);
+
+    console.log("Parsed employees:", employeeData);
+    setEmployees(employeeData);
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    toast.error("Failed to fetch employees");
+    setEmployees([]);
+  } finally {
+    setIsLoadingEmployees(false);
+  }
+}, []);
+
 
   useEffect(() => {
     if (isOpen && relationalManagerMetadata.type === 'employee') {
@@ -73,38 +77,37 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   }, [isOpen, relationalManagerMetadata.type, fetchEmployees]);
 
   useEffect(() => {
-    if (isOpen && relationalManager) {
-      setRelationalManagerMetadata({
-        id: relationalManager.id,
-        name: relationalManager.name,
-        mobileNumber: relationalManager.mobileNumber,
-        email: relationalManager.email,
-        type: relationalManager.type || "employee",
-        employeeId: relationalManager.employeeId,
-        appointeeName: relationalManager.appointeeName || "",
-        profilePicture: relationalManager.profilePicture || undefined,
-        description: relationalManager.description || "",
-        isActive: relationalManager.isActive ?? true
-      });
-      setPreviewImage(relationalManager.profilePicture || null);
-    }
-  }, [isOpen, relationalManager]);
+  if (isOpen && relationalManager) {
+    setRelationalManagerMetadata({
+      id: relationalManager.id,
+      name: relationalManager.name,
+      mobileNumber: relationalManager.mobileNumber,
+      email: relationalManager.email,
+      type: relationalManager.type || "employee",
+      employeeId: relationalManager.employeeId,
+      photo: relationalManager.photo || undefined,
+      description: relationalManager.description || "",
+      isActive: relationalManager.isActive ?? true
+    });
+    setPreviewImage(relationalManager.photo || null);
+  }
+}, [isOpen, relationalManager]);
+
   
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!relationalManagerMetadata.name) newErrors.name = 'Name is required';
-    if (!relationalManagerMetadata.email) newErrors.email = 'Email is required';
-    if (!relationalManagerMetadata.mobileNumber) newErrors.phone = 'Phone is required';
-    
-    if (relationalManagerMetadata.type === 'employee') {
-      if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
-    } else if (relationalManagerMetadata.type === 'company_appointee') {
-      if (!relationalManagerMetadata.appointeeName) newErrors.appointee = 'Appointee name is required';
-    }
+  const newErrors: Record<string, string> = {};
+  if (!relationalManagerMetadata.name) newErrors.name = 'Name is required';
+  if (!relationalManagerMetadata.email) newErrors.email = 'Email is required';
+  if (!relationalManagerMetadata.mobileNumber) newErrors.phone = 'Phone is required';
+  
+  if (relationalManagerMetadata.type === 'employee') {
+    if (!relationalManagerMetadata.employeeId) newErrors.employee = 'Employee is required';
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
 
   const handleUpdateRelationalManager = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,13 +140,13 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   };
 
   const handleTypeChange = (value: string) => {
-    setRelationalManagerMetadata(prev => ({
-      ...prev,
-      type: value as 'employee' | 'company_appointee',
-      employeeId: undefined,
-      appointeeName: ""
-    }));
-  };
+  setRelationalManagerMetadata(prev => ({
+    ...prev,
+    type: value as 'employee' | 'company_appointee',
+    employeeId: undefined
+  }));
+};
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -164,7 +167,7 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
 
       setRelationalManagerMetadata(prev => ({
         ...prev,
-        profilePicture: file
+        photo: file
       }));
 
       // Create preview
@@ -179,7 +182,7 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
   const handleRemoveImage = () => {
     setRelationalManagerMetadata(prev => ({
       ...prev,
-      profilePicture: undefined
+      photo: undefined
     }));
     setPreviewImage(null);
   };
@@ -244,7 +247,7 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
           </div>
 
           <div>
-            <Label htmlFor="profilePicture">Profile Picture </Label>
+            <Label htmlFor="photo">Profile Picture </Label>
             <div className="mt-2">
               {previewImage ? (
                 <div className="relative inline-block">
@@ -273,7 +276,7 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
                     <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG or JPEG (Max 5MB)</p>
                   </div>
                   <input
-                    id="profilePicture"
+                    id="photo"
                     type="file"
                     accept=".png,.jpg,.jpeg"
                     onChange={handleFileChange}
@@ -311,45 +314,31 @@ export default function UpdateRelationalManager({ isOpen, onClose, relationalMan
             />
           </div>
 
-          {relationalManagerMetadata.type === 'employee' ? (
-            <div>
-              <Label htmlFor="employee">Employee *</Label>
-              {isLoadingEmployees ? (
-                <div className="flex items-center justify-center py-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
-                  <span className="ml-2 text-sm text-gray-600">Loading employees...</span>
-                </div>
-              ) : (
-                <Select
-                  defaultValue={relationalManagerMetadata.employeeId ? String(relationalManagerMetadata.employeeId) : ""}
-                  onChange={handleEmployeeChange}
-                  options={[
-                    { value: "", label: "Select an employee" },
-                    ...employees.map(emp => ({
-                      value: String(emp.id),
-                      label: `${emp.name} (${emp.email})`
-                    }))
-                  ]}
-                />
-              )}
-              {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="appointeeName">Appointee Name *</Label>
-              <Input
-                id="appointeeName"
-                value={relationalManagerMetadata.appointeeName || ""}
-                onChange={(e) => setRelationalManagerMetadata(prev => ({
-                  ...prev,
-                  appointeeName: e.target.value
-                }))}
-                error={!!errors.appointee}
-                placeholder="Enter appointee name"
-              />
-              {errors.appointee && <p className="text-red-500 text-sm mt-1">{errors.appointee}</p>}
-            </div>
-          )}
+          {relationalManagerMetadata.type === 'employee' && (
+  <div>
+    <Label htmlFor="employee">Employee *</Label>
+    {isLoadingEmployees ? (
+      <div className="flex items-center justify-center py-2">
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+        <span className="ml-2 text-sm text-gray-600">Loading employees...</span>
+      </div>
+    ) : (
+      <Select
+        defaultValue={relationalManagerMetadata.employeeId ? String(relationalManagerMetadata.employeeId) : ""}
+        onChange={handleEmployeeChange}
+        options={[
+          { value: "", label: "Select an employee" },
+          ...employees.map(emp => ({
+            value: String(emp.id),
+            label: `${emp.name} (${emp.email})`
+          }))
+        ]}
+      />
+    )}
+    {errors.employee && <p className="text-red-500 text-sm mt-1">{errors.employee}</p>}
+  </div>
+)}
+
 
           <div>
             <Label htmlFor="isActive">Status</Label>

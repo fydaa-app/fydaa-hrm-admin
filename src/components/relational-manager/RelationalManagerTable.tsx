@@ -18,7 +18,7 @@ export interface RelationalManagerTableProps {
     type: 'employee' | 'company_appointee';
     employeeId?: number;
     appointeeName?: string;
-    profilePicture?: string;
+    photo?: string;
     description?: string;
     isActive: boolean;
     createdAt: string;
@@ -39,7 +39,7 @@ export interface RelationalManager {
   type: 'employee' | 'company_appointee';
   employeeId?: number;
   appointeeName?: string;
-  profilePicture?: string;
+  photo?: string;
   description?: string;
   isActive: boolean;
   employee?: {
@@ -111,9 +111,9 @@ export default function RelationalManagerTable({
                     </TableCell>
                     <TableCell className="px-5 py-4 sm:px-6 text-start">
                       <div className="flex items-center gap-3">
-                        {relationalManager.profilePicture && (
+                        {relationalManager.photo && (
                           <img 
-                            src={relationalManager.profilePicture} 
+                            src={relationalManager.photo} 
                             alt={relationalManager.name}
                             className="w-10 h-10 rounded-full object-cover"
                           />

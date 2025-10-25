@@ -1,6 +1,7 @@
 import { settings } from "@/helpers/settings/config";
 import API, { ApiType, APIResponse } from "./index";
 
+
 export interface RelationalManagerDetails {
   id: number;
   name: string;
@@ -8,8 +9,7 @@ export interface RelationalManagerDetails {
   mobileNumber: string;
   type: 'employee' | 'company_appointee';
   employeeId?: number;
-  appointeeName?: string;
-  profilePicture?: string;
+  photo?: string; 
   description?: string;
   isActive?: boolean;
   employee?: {
@@ -19,30 +19,34 @@ export interface RelationalManagerDetails {
   };
 }
 
+
 export interface CreateRelationalManagerRequest {
   name: string;
   email: string;
   mobileNumber: string;
   type: 'employee' | 'company_appointee';
   employeeId?: number;
-  appointeeName?: string;
-  profilePicture?: File | string;
+  photo?: File | string;
   description?: string;
   isActive?: boolean;
 }
 
+
 export interface UpdateRelationalManagerRequest extends CreateRelationalManagerRequest {
   id: number;
 }
+
 
 export interface PaginationData {
   page: number;
   search?: string;
 }
 
+
 export interface EmployeeSearchData {
   search: string;
 }
+
 
 export interface Employee {
   id: number;
@@ -50,12 +54,13 @@ export interface Employee {
   email: string;
 }
 
-// Type for API response data
+
 export interface ApiResponseData {
   data?: Employee[] | {
     data: Employee[];
   };
 }
+
 
 class RelationalManagerServiceApi extends API {
 
@@ -71,12 +76,8 @@ class RelationalManagerServiceApi extends API {
       formData.append('employeeId', data.employeeId.toString());
     }
     
-    if (data.type === 'company_appointee' && data.appointeeName) {
-      formData.append('appointeeName', data.appointeeName);
-    }
-    
-    if (data.profilePicture instanceof File) {
-      formData.append('profilePicture', data.profilePicture);
+    if (data.photo instanceof File) {
+      formData.append('photo', data.photo);
     }
     
     if (data.description) {
@@ -100,12 +101,8 @@ class RelationalManagerServiceApi extends API {
       formData.append('employeeId', data.employeeId.toString());
     }
     
-    if (data.type === 'company_appointee' && data.appointeeName) {
-      formData.append('appointeeName', data.appointeeName);
-    }
-    
-    if (data.profilePicture instanceof File) {
-      formData.append('profilePicture', data.profilePicture);
+    if (data.photo instanceof File) {
+      formData.append('photo', data.photo);
     }
     
     if (data.description) {
@@ -118,19 +115,21 @@ class RelationalManagerServiceApi extends API {
   }
 
   async getRelationalManager(data: PaginationData): Promise<APIResponse> {
-    const searchParam = data.search ? `&search=${data.search}` : '';
-    return this.get(ApiType.private, `${this.baseUrl}/referrals/relationship-manager?page=${data.page}${searchParam}`);
-  }
+  const searchParam = data.search ? `&search=${data.search}` : '&search=';
+  return this.get(ApiType.private, `${this.baseUrl}/referrals/relationship-manager?page=${data.page}${searchParam}`);
+}
+
+
 
   async deleteRelationalManager(id: number): Promise<APIResponse> {
     return this.delete(ApiType.private, `${this.baseUrl}/referrals/relationship-manager/${id}`);
   }
 
   async searchEmployees(data: EmployeeSearchData): Promise<APIResponse> {
-    const searchParam = data.search ? `search=${data.search}` : '';
-    return this.get(ApiType.private, `${this.baseUrl}/referrals/employee-list?limit=100&${searchParam}`);
+    const searchParam = data.search ? `&search=${data.search}` : '';
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/employee-list?limit=100${searchParam}`);
   }
-
 }
+
 
 export const relationalManagerServiceApi = new RelationalManagerServiceApi(settings.EMPLOYEE_SERVICE);
