@@ -137,13 +137,19 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
     if (!validateForm()) return;
     setIsLoadingButton(true);
     try {
-      await employeeServiceApi.updateEmployee(employeeMetadata.id, {
+      const response = await employeeServiceApi.updateEmployee(employeeMetadata.id, {
         ...employeeMetadata,
         role: String(employeeMetadata.level)
-      });     
-      toast.success('Employee updated successfully');
-      router.refresh();
-      closeModal();
+      });
+      
+      // Check for successful response (200 or 201)
+      if (response?.status === 200 || response?.status === 201) {
+        toast.success('Employee updated successfully');
+        router.refresh();
+        closeModal();
+      } else {
+        toast.error('Failed to update employee');
+      }
     } catch (error) {
       console.log(error);  
       toast.error('Failed to update employee');

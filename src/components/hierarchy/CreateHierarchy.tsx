@@ -41,10 +41,16 @@ export default function CreateHierarchy({ isOpen, onClose }: CreateHierarchyProp
     
     setIsSubmitting(true);
     try {
-      await hierarchyServiceApi.createHierarchy(hierarchyData);
-      toast.success('Hierarchy created successfully');
-      router.refresh();
-      closeModal();
+      const response = await hierarchyServiceApi.createHierarchy(hierarchyData);
+      
+      // Check for successful response (200 or 201)
+      if (response?.status === 200 || response?.status === 201) {
+        toast.success('Hierarchy created successfully');
+        router.refresh();
+        closeModal();
+      } else {
+        toast.error('Failed to create hierarchy');
+      }
     } catch (error) {
 
         const errorData = error as { 

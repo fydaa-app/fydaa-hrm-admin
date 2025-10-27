@@ -109,10 +109,16 @@ const handleCreateRelationalManager = async (e: React.FormEvent) => {
   setIsLoadingbutton(true);
   try {
     console.log('Creating with photo:', relationalManagerMetadata.photo);
-    await relationalManagerServiceApi.createRelationalManager(relationalManagerMetadata);
-    toast.success('Relational Manager created successfully');
-    router.refresh();
-    closeModal();
+    const response = await relationalManagerServiceApi.createRelationalManager(relationalManagerMetadata);
+    
+    // Check for successful response (200 or 201)
+    if (response?.status === 200 || response?.status === 201) {
+      toast.success('Relational Manager created successfully');
+      router.refresh();
+      closeModal();
+    } else {
+      toast.error('Failed to create relational manager');
+    }
   } catch (error) {
     console.log(error);
     toast.error('Failed to create relational manager');

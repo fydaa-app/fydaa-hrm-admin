@@ -110,14 +110,13 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
         attachment2: attachment2 || advisor.attachment2,
       });
       
-      // APIResponse type may not include 'success'; use a safe runtime check
-      const respAny = response;
-      if (respAny?.status === 200) {
-        toast.success('Advisor created successfully');
+      // Check for successful response (200 or 201)
+      if (response?.status === 200 || response?.status === 201) {
+        toast.success('Advisor updated successfully');
         router.refresh();
         closeModal();
       } else {
-        toast.error('Failed to create advisor');
+        toast.error('Failed to update advisor');
       }
     } catch (error) {
       console.error('Error updating advisor:', error);

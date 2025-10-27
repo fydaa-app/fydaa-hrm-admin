@@ -103,11 +103,20 @@ export default abstract class API {
         headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
         options: AxiosRequestConfig = {}
     ): Promise<APIResponse> {
+        // Don't set Content-Type for FormData - let browser set it automatically with boundary
+        const defaultHeaders: Record<string, string> = {
+            Accept: 'application/json',
+        };
+        
+        // Only add Content-Type if data is not FormData
+        if (!(data instanceof FormData)) {
+            defaultHeaders['Content-Type'] = 'application/json';
+        }
+        
         return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .post(url, data, {
                 headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
+                    ...defaultHeaders,
                     ...headers,
                 },
                 ...options,
@@ -123,11 +132,20 @@ export default abstract class API {
         headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
         options: AxiosRequestConfig = {}
     ): Promise<APIResponse> {
+        // Don't set Content-Type for FormData - let browser set it automatically with boundary
+        const defaultHeaders: Record<string, string> = {
+            Accept: 'application/json',
+        };
+        
+        // Only add Content-Type if data is not FormData
+        if (!(data instanceof FormData)) {
+            defaultHeaders['Content-Type'] = 'application/json';
+        }
+        
         return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .put(url, data, {
                 headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
+                    ...defaultHeaders,
                     ...headers,
                 },
                 ...options,
@@ -143,11 +161,20 @@ export default abstract class API {
         headers: Record<string, string> = {}, // Replaced `any` with `Record<string, string>`
         options: AxiosRequestConfig = {}
     ): Promise<APIResponse> {
+        // Don't set Content-Type for FormData - let browser set it automatically with boundary
+        const defaultHeaders: Record<string, string> = {
+            Accept: 'application/json',
+        };
+        
+        // Only add Content-Type if data is not FormData
+        if (!(data instanceof FormData)) {
+            defaultHeaders['Content-Type'] = 'application/json';
+        }
+        
         return (type === ApiType.private ? axiosPrivate : axiosPublic)
             .patch(url, data, {
                 headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/json',
+                    ...defaultHeaders,
                     ...headers,
                 },
                 ...options,
