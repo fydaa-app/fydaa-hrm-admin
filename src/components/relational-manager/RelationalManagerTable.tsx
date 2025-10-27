@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -8,6 +8,7 @@ import {
 } from "../ui/table";
 import DeleteRelationalManager from '@/components/relational-manager/DeleteRelationalManager';
 import EditRelationalManager from "@/components/relational-manager/EditRelationalManager";
+
 
 export interface RelationalManagerTableProps {
   relationalManagers: {
@@ -32,6 +33,7 @@ export interface RelationalManagerTableProps {
   onUpdate?: () => void;
 }
 
+
 export interface RelationalManager {
   id: number;
   name: string;
@@ -50,6 +52,7 @@ export interface RelationalManager {
   };
 }
 
+
 export default function RelationalManagerTable({ 
   relationalManagers = [], 
   error,
@@ -59,6 +62,7 @@ export default function RelationalManagerTable({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedRelationalManager, setSelectedRelationalManager] = useState<RelationalManager | null>(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
+  const [overflowingDescriptions, setOverflowingDescriptions] = useState<Set<number>>(new Set());
   
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -77,19 +81,22 @@ export default function RelationalManagerTable({
     });
   };
 
-  const useTextOverflow = (text: string, isExpanded: boolean) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-
-    useEffect(() => {
-      const element = ref.current;
-      if (element && !isExpanded) {
-        setIsOverflowing(element.scrollWidth > element.offsetWidth);
-      }
-    }, [text, isExpanded]);
-
-    return { ref, isOverflowing };
-  };
+  const checkOverflow = useCallback((node: HTMLDivElement | null, id: number, isExpanded: boolean) => {
+    if (node && !isExpanded) {
+      setTimeout(() => {
+        const isOverflowing = node.scrollWidth > node.offsetWidth;
+        setOverflowingDescriptions(prev => {
+          const newSet = new Set(prev);
+          if (isOverflowing) {
+            newSet.add(id);
+          } else {
+            newSet.delete(id);
+          }
+          return newSet;
+        });
+      }, 0);
+    }
+  }, []);
 
 
   return (
@@ -184,37 +191,28 @@ export default function RelationalManagerTable({
                     )}
                   </TableCell>
                   
-                  {/* Description - FIXED VERSION */}
+                  {/* Description */}
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 min-w-[200px]">
                     {relationalManager.description ? (
-                      (() => {
-                        const { ref, isOverflowing } = useTextOverflow(
-                          relationalManager.description, 
-                          expandedDescriptions.has(relationalManager.id)
-                        );
-                        
-                        return (
-                          <div className="max-w-[200px]">
-                            <div 
-                              ref={ref}
-                              className={expandedDescriptions.has(relationalManager.id) ? 'whitespace-normal break-words' : 'truncate'}
-                            >
-                              {relationalManager.description}
-                            </div>
-                            {(isOverflowing || expandedDescriptions.has(relationalManager.id)) && (
-                              <button
-                                className="text-blue-600 hover:underline text-xs mt-1 font-medium"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleDescription(relationalManager.id);
-                                }}
-                              >
-                                {expandedDescriptions.has(relationalManager.id) ? 'Show less' : 'Read more'}
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })()
+                      <div className="max-w-[200px]">
+                        <div 
+                          ref={(node) => checkOverflow(node, relationalManager.id, expandedDescriptions.has(relationalManager.id))}
+                          className={expandedDescriptions.has(relationalManager.id) ? 'whitespace-normal break-words' : 'truncate'}
+                        >
+                          {relationalManager.description}
+                        </div>
+                        {(overflowingDescriptions.has(relationalManager.id) || expandedDescriptions.has(relationalManager.id)) && (
+                          <button
+                            className="text-blue-600 hover:underline text-xs mt-1 font-medium"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleDescription(relationalManager.id);
+                            }}
+                          >
+                            {expandedDescriptions.has(relationalManager.id) ? 'Show less' : 'Read more'}
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}

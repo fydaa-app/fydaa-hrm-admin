@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -8,6 +8,7 @@ import {
 } from "../ui/table";
 import DeleteAdvisor from '@/components/advisor/DeleteAdvisor';
 import EditAdvisor from "@/components/advisor/EditAdvisor";
+
 
 export interface AdvisorTableProps {
   advisors: {
@@ -27,6 +28,7 @@ export interface AdvisorTableProps {
   onUpdate?: () => void;
 }
 
+
 export interface Advisor {
   id: number;
   name: string;
@@ -41,6 +43,7 @@ export interface Advisor {
   isActive: boolean;
 }
 
+
 export default function AdvisorTable({ 
   advisors = [], 
   error,
@@ -49,8 +52,8 @@ export default function AdvisorTable({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
-  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set()); 
-
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
+  const [overflowingDescriptions, setOverflowingDescriptions] = useState<Set<number>>(new Set());
 
   const toggleDescription = (advisorId: number) => {
     setExpandedDescriptions(prev => {
@@ -64,6 +67,24 @@ export default function AdvisorTable({
     });
   };
 
+  const checkOverflow = useCallback((node: HTMLDivElement | null, id: number, isExpanded: boolean) => {
+    if (node && !isExpanded) {
+      setTimeout(() => {
+        const isOverflowing = node.scrollWidth > node.offsetWidth;
+        setOverflowingDescriptions(prev => {
+          const newSet = new Set(prev);
+          if (isOverflowing) {
+            newSet.add(id);
+          } else {
+            newSet.delete(id);
+          }
+          return newSet;
+        });
+      }, 0);
+    }
+  }, []);
+
+
   const handleCloseEdit = () => {
     setEditModalOpen(false);
     if (onUpdate) onUpdate();
@@ -72,20 +93,6 @@ export default function AdvisorTable({
   const handleCloseDelete = () => {
     setDeleteModalOpen(false);
     if (onUpdate) onUpdate();
-  };
-
-  const useTextOverflow = (text: string, isExpanded: boolean) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-
-    useEffect(() => {
-      const element = ref.current;
-      if (element && !isExpanded) {
-        setIsOverflowing(element.scrollWidth > element.offsetWidth);
-      }
-    }, [text, isExpanded]);
-
-    return { ref, isOverflowing };
   };
 
   return (
@@ -166,39 +173,29 @@ export default function AdvisorTable({
                     <div className="truncate">{advisor.email}</div>
                   </TableCell>
                   
-                  {/* Description - FIXED VERSION */}
+                  {/* Description */}
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 min-w-[200px]">
-                    {(() => {
-                      const { ref, isOverflowing } = useTextOverflow(
-                        advisor.description, 
-                        expandedDescriptions.has(advisor.id)
-                      );
-                      
-                      return (
-                        <div className="max-w-[200px]">
-                          <div 
-                            ref={ref}
-                            className={expandedDescriptions.has(advisor.id) ? 'whitespace-normal break-words' : 'truncate'}
-                          >
-                            {advisor.description}
-                          </div>
-                          {(isOverflowing || expandedDescriptions.has(advisor.id)) && (
-                            <button
-                              className="text-blue-600 hover:underline text-xs mt-1 font-medium"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleDescription(advisor.id);
-                              }}
-                            >
-                              {expandedDescriptions.has(advisor.id) ? 'Show less' : 'Read more'}
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    <div className="max-w-[200px]">
+                      <div 
+                        ref={(node) => checkOverflow(node, advisor.id, expandedDescriptions.has(advisor.id))}
+                        className={expandedDescriptions.has(advisor.id) ? 'whitespace-normal break-words' : 'truncate'}
+                      >
+                        {advisor.description}
+                      </div>
+                      {(overflowingDescriptions.has(advisor.id) || expandedDescriptions.has(advisor.id)) && (
+                        <button
+                          className="text-blue-600 hover:underline text-xs mt-1 font-medium"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDescription(advisor.id);
+                          }}
+                        >
+                          {expandedDescriptions.has(advisor.id) ? 'Show less' : 'Read more'}
+                        </button>
+                      )}
+                    </div>
                   </TableCell>
 
-                  
                   {/* Age */}
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 w-[70px]">
                     {advisor.age}
@@ -303,4 +300,3 @@ export default function AdvisorTable({
     </div>
   );
 }
-
