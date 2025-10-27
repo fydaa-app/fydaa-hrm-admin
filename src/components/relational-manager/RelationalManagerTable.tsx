@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -58,11 +58,39 @@ export default function RelationalManagerTable({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedRelationalManager, setSelectedRelationalManager] = useState<RelationalManager | null>(null);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
   
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  const toggleDescription = (managerId: number) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(managerId)) {
+        newSet.delete(managerId);
+      } else {
+        newSet.add(managerId);
+      }
+      return newSet;
+    });
+  };
+
+  const useTextOverflow = (text: string, isExpanded: boolean) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+    useEffect(() => {
+      const element = ref.current;
+      if (element && !isExpanded) {
+        setIsOverflowing(element.scrollWidth > element.offsetWidth);
+      }
+    }, [text, isExpanded]);
+
+    return { ref, isOverflowing };
+  };
+
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.05] dark:bg-white/[0.03]">
@@ -155,15 +183,43 @@ export default function RelationalManagerTable({
                       <span className="text-gray-400">-</span>
                     )}
                   </TableCell>
+                  
+                  {/* Description - FIXED VERSION */}
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 min-w-[200px]">
                     {relationalManager.description ? (
-                      <div className="truncate" title={relationalManager.description}>
-                        {relationalManager.description}
-                      </div>
+                      (() => {
+                        const { ref, isOverflowing } = useTextOverflow(
+                          relationalManager.description, 
+                          expandedDescriptions.has(relationalManager.id)
+                        );
+                        
+                        return (
+                          <div className="max-w-[200px]">
+                            <div 
+                              ref={ref}
+                              className={expandedDescriptions.has(relationalManager.id) ? 'whitespace-normal break-words' : 'truncate'}
+                            >
+                              {relationalManager.description}
+                            </div>
+                            {(isOverflowing || expandedDescriptions.has(relationalManager.id)) && (
+                              <button
+                                className="text-blue-600 hover:underline text-xs mt-1 font-medium"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleDescription(relationalManager.id);
+                                }}
+                              >
+                                {expandedDescriptions.has(relationalManager.id) ? 'Show less' : 'Read more'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()
                     ) : (
                       <span className="text-gray-400">-</span>
                     )}
                   </TableCell>
+                  
                   <TableCell className="px-4 py-3 text-start text-theme-sm w-[100px]">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                       relationalManager.isActive 
