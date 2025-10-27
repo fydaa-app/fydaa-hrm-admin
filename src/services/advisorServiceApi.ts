@@ -104,7 +104,6 @@ class AdvisorServiceApi extends API {
     try {
       const formData = new FormData();
       
-      // Append text fields
       formData.append('name', data.name.trim());
       formData.append('mobile', data.mobile.trim());
       formData.append('email', data.email.trim());
@@ -113,36 +112,22 @@ class AdvisorServiceApi extends API {
       formData.append('experienceInYears', data.experienceInYears.toString());
       formData.append('isActive', data.isActive.toString());
       
-      // Only append files if they are File objects (new uploads)
       if (data.photo instanceof File) {
         formData.append('photo', data.photo, data.photo.name);
-        console.log('New photo uploaded:', data.photo.name);
-      } else if (typeof data.photo === 'string') {
-        // If photo is a string (existing URL), send it as a field
-        formData.append('existingPhoto', data.photo);
       }
       
       if (data.attachment1 instanceof File) {
         formData.append('attachment1', data.attachment1, data.attachment1.name);
-        console.log('New attachment1 uploaded:', data.attachment1.name);
-      } else if (typeof data.attachment1 === 'string') {
-        formData.append('existingAttachment1', data.attachment1);
       }
       
       if (data.attachment2 instanceof File) {
         formData.append('attachment2', data.attachment2, data.attachment2.name);
-        console.log('New attachment2 uploaded:', data.attachment2.name);
-      } else if (typeof data.attachment2 === 'string') {
-        formData.append('existingAttachment2', data.attachment2);
       }
 
       const response = await this.patch(
         ApiType.private, 
         `${this.baseUrl}/referrals/advisor/${id}`, 
-        formData,
-        {
-          
-        }
+        formData
       );
       
       return response;
