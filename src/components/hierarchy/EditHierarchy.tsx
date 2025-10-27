@@ -46,10 +46,16 @@ export default function EditHierarchy({ isOpen, onClose, hierarchy }: EditHierar
     
     setIsSubmitting(true);
     try {
-      await hierarchyServiceApi.updateHierarchy(hierarchyData.id, hierarchyData);
-      toast.success('Hierarchy updated successfully');
-      router.refresh();
-      onClose();
+      const response = await hierarchyServiceApi.updateHierarchy(hierarchyData.id, hierarchyData);
+      
+      // Check for successful response (200 or 201)
+      if (response?.status === 200 || response?.status === 201) {
+        toast.success('Hierarchy updated successfully');
+        router.refresh();
+        onClose();
+      } else {
+        toast.error('Failed to update hierarchy');
+      }
     } catch (error) {
       console.error(error);
       toast.error('Failed to update hierarchy');

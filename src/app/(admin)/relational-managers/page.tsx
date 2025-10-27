@@ -216,7 +216,10 @@ function RelationalManagerListClient() {
 
           <CreateRelationalManager
             isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
+            onClose={() => {
+              setIsModalOpen(false);
+              fetchData(); // Refresh data after creating
+            }}
           />
           
           {isSearching ? (
@@ -244,7 +247,7 @@ function RelationalManagerListClient() {
             </div>
           ) : (
             <>
-              <RelationalManagerTable relationalManagers={relationalManagers} error={error} />
+              <RelationalManagerTable relationalManagers={relationalManagers} error={error} onUpdate={fetchData} />
               {totalCount > 0 && (
                 <Pagination
                   currentPage={page}

@@ -105,18 +105,21 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
     if (!validateForm()) return;
     setIsLoadingbutton(true);
     try {
-      await employeeServiceApi.createEmployee({
+      const response = await employeeServiceApi.createEmployee({
         ...employeeMetadata,
         role: employeeMetadata.level.toString(),
-      });     
-       
-      toast.success('Employee created successfully');
-      router.refresh();
-      closeModal();
+      });
+      
+      // Check for successful response (200 or 201)
+      if (response?.status === 200 || response?.status === 201) {
+        toast.success('Employee created successfully');
+        router.refresh();
+        closeModal();
+      } else {
+        toast.error('Failed to create employee');
+      }
     } catch (error) {
       console.log(error);  
-      // setErrors(error.message);
-      closeModal();
       toast.error('Failed to create employee');
     } finally{
       setIsLoadingbutton(false);

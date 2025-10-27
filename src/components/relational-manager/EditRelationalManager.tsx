@@ -114,10 +114,16 @@ const fetchEmployees = useCallback(async () => {
     if (!validateForm()) return;
     setIsLoadingButton(true);
     try {
-      await relationalManagerServiceApi.updateRelationalManager(relationalManagerMetadata.id, relationalManagerMetadata);     
-      toast.success('Relational Manager updated successfully');
-      router.refresh();
-      closeModal();
+      const response = await relationalManagerServiceApi.updateRelationalManager(relationalManagerMetadata.id, relationalManagerMetadata);
+      
+      // Check for successful response (200 or 201)
+      if (response?.status === 200 || response?.status === 201) {
+        toast.success('Relational Manager updated successfully');
+        router.refresh();
+        closeModal();
+      } else {
+        toast.error('Failed to update relational manager');
+      }
     } catch (error) {
       console.log(error);  
       toast.error('Failed to update relational manager');

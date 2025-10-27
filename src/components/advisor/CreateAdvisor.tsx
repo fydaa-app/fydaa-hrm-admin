@@ -88,9 +88,8 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
         attachment2: attachment2 || undefined,
       });
       
-      // APIResponse type may not include 'success'; use a safe runtime check
-      const respAny = response;
-      if (respAny?.status === 200) {
+      // Check for successful response (200 or 201)
+      if (response?.status === 200 || response?.status === 201) {
         toast.success('Advisor created successfully');
         router.refresh();
         closeModal();
@@ -170,7 +169,7 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[99999]">
+    <div className="fixed inset-0 bg-black-opacity flex items-center justify-center p-4 z-99999">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-gray-800">
         <div className="flex justify-between items-center p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
           <h2 className="text-xl font-semibold dark:text-white">Create New Advisor</h2>
