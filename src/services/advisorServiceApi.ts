@@ -140,16 +140,20 @@ class AdvisorServiceApi extends API {
   async getAdvisors(data: PaginationData): Promise<APIResponse> {
     try {
       const searchParam = data.search ? `&search=${encodeURIComponent(data.search)}` : '';
+      const fullUrl = `${this.baseUrl}/referrals/advisor?page=${data.page}${searchParam}`;
+      
       const response = await this.get(
         ApiType.private,
-        `${this.baseUrl}/referrals/advisor?page=${data.page}${searchParam}`
+        fullUrl
       );
+      
       return response;
-    } catch (error) {
-      console.error('Error in getAdvisors:', error);
+    } catch (error: any) {
       throw error;
     }
   }
+
+
 
   async deleteAdvisor(id: number): Promise<APIResponse> {
     try {

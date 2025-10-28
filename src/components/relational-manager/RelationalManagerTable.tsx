@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -8,6 +8,7 @@ import {
 } from "../ui/table";
 import DeleteRelationalManager from '@/components/relational-manager/DeleteRelationalManager';
 import EditRelationalManager from "@/components/relational-manager/EditRelationalManager";
+
 
 
 export interface RelationalManagerTableProps {
@@ -34,6 +35,7 @@ export interface RelationalManagerTableProps {
 }
 
 
+
 export interface RelationalManager {
   id: number;
   name: string;
@@ -53,6 +55,7 @@ export interface RelationalManager {
 }
 
 
+
 export default function RelationalManagerTable({ 
   relationalManagers = [], 
   error,
@@ -62,12 +65,15 @@ export default function RelationalManagerTable({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedRelationalManager, setSelectedRelationalManager] = useState<RelationalManager | null>(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set());
-  const [overflowingDescriptions, setOverflowingDescriptions] = useState<Set<number>>(new Set());
+  
+  // ✅ Use ref instead of state to avoid re-renders
+  const overflowCheckRef = useRef<Set<number>>(new Set());
   
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
 
   const toggleDescription = (managerId: number) => {
     setExpandedDescriptions(prev => {
@@ -81,22 +87,30 @@ export default function RelationalManagerTable({
     });
   };
 
-  const checkOverflow = useCallback((node: HTMLDivElement | null, id: number, isExpanded: boolean) => {
-    if (node && !isExpanded) {
-      setTimeout(() => {
-        const isOverflowing = node.scrollWidth > node.offsetWidth;
-        setOverflowingDescriptions(prev => {
-          const newSet = new Set(prev);
-          if (isOverflowing) {
-            newSet.add(id);
-          } else {
-            newSet.delete(id);
+
+  // ✅ Use IntersectionObserver instead of setTimeout
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const element = entry.target as HTMLElement;
+            const id = element.dataset.managerId;
+            if (id && element.scrollWidth > element.offsetWidth) {
+              overflowCheckRef.current.add(Number(id));
+            }
           }
-          return newSet;
         });
-      }, 0);
-    }
-  }, []);
+      },
+      { threshold: 0.1 }
+    );
+
+    const elements = document.querySelectorAll('[data-description-cell]');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [relationalManagers]);
+
 
 
   return (
@@ -140,8 +154,10 @@ export default function RelationalManagerTable({
               
             {/* Table Body */}
             <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-              {relationalManagers.map((relationalManager, index) => (
-                <TableRow key={index}>
+              {relationalManagers.map((relationalManager) => {
+                const isExpanded = expandedDescriptions.has(relationalManager.id);
+                const hasDescription = relationalManager.description && relationalManager.description.length > 50;
+                return (<TableRow key={relationalManager.id}>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 w-[110px]">
                     {formatDate(relationalManager.createdAt)}
                   </TableCell>
@@ -190,18 +206,17 @@ export default function RelationalManagerTable({
                       <span className="text-gray-400">-</span>
                     )}
                   </TableCell>
-                  
-                  {/* Description */}
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 min-w-[200px]">
                     {relationalManager.description ? (
                       <div className="max-w-[200px]">
                         <div 
-                          ref={(node) => checkOverflow(node, relationalManager.id, expandedDescriptions.has(relationalManager.id))}
-                          className={expandedDescriptions.has(relationalManager.id) ? 'whitespace-normal break-words' : 'truncate'}
+                          data-description-cell
+                          data-manager-id={relationalManager.id}
+                          className={isExpanded ? 'whitespace-normal break-words' : 'truncate'}
                         >
                           {relationalManager.description}
                         </div>
-                        {(overflowingDescriptions.has(relationalManager.id) || expandedDescriptions.has(relationalManager.id)) && (
+                        {hasDescription && (
                           <button
                             className="text-blue-600 hover:underline text-xs mt-1 font-medium"
                             onClick={(e) => {
@@ -209,7 +224,7 @@ export default function RelationalManagerTable({
                               toggleDescription(relationalManager.id);
                             }}
                           >
-                            {expandedDescriptions.has(relationalManager.id) ? 'Show less' : 'Read more'}
+                            {isExpanded ? 'Show less' : 'Read more'}
                           </button>
                         )}
                       </div>
@@ -217,7 +232,6 @@ export default function RelationalManagerTable({
                       <span className="text-gray-400">-</span>
                     )}
                   </TableCell>
-                  
                   <TableCell className="px-4 py-3 text-start text-theme-sm w-[100px]">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                       relationalManager.isActive 
@@ -226,7 +240,7 @@ export default function RelationalManagerTable({
                     }`}>
                       {relationalManager.isActive ? 'Active' : 'Inactive'}
                     </span>
-                  </TableCell>     
+                  </TableCell>
                   <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 w-[120px] sticky right-0 bg-white dark:bg-white/[0.03]">
                     <div className="flex space-x-2 whitespace-nowrap">
                       <button
@@ -249,8 +263,8 @@ export default function RelationalManagerTable({
                       </button>
                     </div>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>);
+              })}
             </TableBody>
           </Table>
         ) : (
