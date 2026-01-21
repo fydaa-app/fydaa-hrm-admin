@@ -1,5 +1,6 @@
 import { settings } from "@/helpers/settings/config";
 import API, { ApiType, APIResponse } from "./index";
+import axios from "axios";
 
 export interface AdvisorDetails {
   id: number;
@@ -148,9 +149,12 @@ class AdvisorServiceApi extends API {
       );
       
       return response;
-    } catch (error: any) {
-      throw error;
-    }
+    } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          throw error;
+        }
+        throw error;
+      }
   }
 
 
