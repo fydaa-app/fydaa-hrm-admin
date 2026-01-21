@@ -46,12 +46,13 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
       newErrors.email = 'Invalid email format';
     }
     
-    // Mobile validation (assuming 10 digit Indian number)
-    const mobileRegex = /^[6-9]\d{9}$/;
+    // Mobile (10-digit) OR landline (8-digit)
+    const phoneRegex = /^([6-9]\d{9}|\d{8})$/;
+
     if (!advisorMetadata.mobile.trim()) {
-      newErrors.mobile = 'Mobile number is required';
-    } else if (!mobileRegex.test(advisorMetadata.mobile)) {
-      newErrors.mobile = 'Invalid mobile number (10 digits)';
+      newErrors.mobile = 'Mobile or landline number is required';
+    } else if (!phoneRegex.test(advisorMetadata.mobile)) {
+      newErrors.mobile = 'Invalid number (10-digit mobile or 8-digit landline)';
     }
     
     if (!advisorMetadata.description.trim()) newErrors.description = 'Description is required';
@@ -217,7 +218,7 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
             </div>
 
             <div>
-              <Label htmlFor="mobile">Mobile Number *</Label>
+              <Label htmlFor="mobile">Mobile/Landline Number *</Label>
               <Input
                 id="mobile"
                 type="tel"
@@ -227,7 +228,7 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
                   mobile: e.target.value.replace(/\D/g, '').slice(0, 10)
                 }))}
                 error={!!errors.mobile}
-                placeholder="9876543210"
+                placeholder="9876543210 or 12345678"
                 maxLength={10}
               />
               {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
