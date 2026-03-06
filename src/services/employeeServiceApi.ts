@@ -72,6 +72,24 @@ class EmployeeServiceApi extends API {
       return this.patch(ApiType.private,`${this.baseUrl}/referrals/employees/${id}`,data);
   }
 
+  // Add to EmployeeServiceApi class
+  async deactivateAndReassign(
+    employeeId: number,
+    replacementEmployeeId: number,
+    replacementEmployeeReferralCode: string
+  ): Promise<APIResponse> {
+    console.log("API called with:", {
+      employeeId,
+      replacementEmployeeId,
+      replacementEmployeeReferralCode,
+    });
+    return this.patch(
+      ApiType.private,
+      `${this.baseUrl}/referrals/employees/${employeeId}/deactivate`,
+      { replacementEmployeeId, replacementEmployeeReferralCode }
+    );
+  }
+
   async getEmployee(data: PaginationData): Promise<APIResponse> {
       return this.get(ApiType.private, `${this.baseUrl}/referrals/employee-list?page=${data.page}&search=${data.search}`)
   }
