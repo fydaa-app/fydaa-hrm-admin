@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import Input from '@/components/form/input/InputField';
 import Select from '@/components/form/Select';
 import Label from "@/components/form/Label";
+import DeactivateEmployee from "@/components/employee/DeactivateEmployee";
 import { 
     UpdateEmployeeRequest,
     EmployeeDetails,
@@ -47,6 +48,7 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingManagers, setIsLoadingManagers] = useState(false);
   const [isLoadingButton, setIsLoadingButton] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   
   const fetchHierarchies = useCallback(async () => {
     try {
@@ -368,10 +370,14 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
             <div className="flex items-center mt-2">
               <button
                 type="button"
-                onClick={() => setEmployeeMetadata(prev => ({
-                  ...prev,
-                  isActive: !prev.isActive
-                }))}
+                onClick={() => {
+                  if (employeeMetadata.isActive) {
+                    // Going inactive → open reassignment modal
+                    setShowDeactivateModal(true);
+                  } else {
+                    setEmployeeMetadata(prev => ({ ...prev, isActive: true }));
+                  }
+                }}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                   employeeMetadata.isActive ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
@@ -406,6 +412,18 @@ export default function UpdateEmployee({ isOpen, onClose, employee }: UpdateEmpl
           </div>
         </form>
       </div>
+     
+      {showDeactivateModal && (
+        <DeactivateEmployee
+          isOpen={showDeactivateModal}
+          onClose={() => {
+            setShowDeactivateModal(false);
+            closeModal(); // ✅ closes UpdateEmployee modal too
+          }}
+          employee={employee}
+        />
+      )}
     </div>
+    
   );
 }
