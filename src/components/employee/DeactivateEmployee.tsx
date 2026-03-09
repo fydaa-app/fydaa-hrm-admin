@@ -13,6 +13,7 @@ interface DeactivateEmployeeProps {
   employee: EmployeeDetails;
 }
 
+
 interface Manager {
   id: number;
   name: string;
