@@ -7,9 +7,6 @@ import Label from "@/components/form/Label";
 import { EmployeeDetails, employeeServiceApi } from "@/services/employeeServiceApi";
 import axios from "axios";
 
-// base URL for the API (could come from env vars or a config)
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
 interface DeactivateEmployeeProps {
   isOpen: boolean;
   onClose: () => void;
