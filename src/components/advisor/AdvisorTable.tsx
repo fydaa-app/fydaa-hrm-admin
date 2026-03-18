@@ -24,10 +24,13 @@ export interface AdvisorTableProps {
     attachment1?: string;
     attachment2?: string;
     isActive: boolean;
+    agentId?: string | null;
+    smartfloId?: string | null;
   }[];
   error: string | null;
   onUpdate?: () => void;
 }
+
 
 
 
@@ -43,7 +46,10 @@ export interface Advisor {
   attachment1?: string;
   attachment2?: string;
   isActive: boolean;
+  agentId?: string | null;
+  smartfloId?: string | null;
 }
+
 
 
 
@@ -59,6 +65,20 @@ export default function AdvisorTable({
   
   // Use ref instead of state to avoid re-renders
   const overflowCheckRef = useRef<Set<number>>(new Set());
+
+  // Placeholder handler for Generate button - will be implemented later
+  const handleGenerateSmartflo = (advisorId: number) => {
+    console.log('Generate Smartflo clicked for advisor ID:', advisorId);
+    // TODO: API integration will be added here
+  };
+
+  // Placeholder handler for View button - will be implemented later
+  const handleViewSmartflo = (advisor: Advisor) => {
+    console.log('View Smartflo clicked for advisor:', advisor);
+    console.log('Agent ID:', advisor.agentId);
+    console.log('Smartflo ID:', advisor.smartfloId);
+    // TODO: View modal or details page will be implemented here
+  };
 
   const toggleDescription = (advisorId: number) => {
     setExpandedDescriptions(prev => {
@@ -139,12 +159,20 @@ export default function AdvisorTable({
                 <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 w-[120px]">
                   Attachments
                 </TableCell>
-                <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 w-[100px]">
-                  Status
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 w-[120px] sticky right-0 bg-white dark:bg-white/[0.03]">
-                  Actions
-                </TableCell>
+                  {/* Status */}
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 w-[100px]">
+                    Status
+                  </TableCell>
+
+                  {/* Smartflo */}
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 w-[120px]">
+                    Smartflo
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 w-[120px] sticky right-0 bg-white dark:bg-white/[0.03]">
+                    Actions
+                  </TableCell>
               </TableRow>
             </TableHeader>
               
@@ -252,15 +280,35 @@ export default function AdvisorTable({
                       </div>
                     </TableCell>
                     
-                    {/* Status */}
+                                        {/* Status */}
                     <TableCell className="px-4 py-3 text-start text-theme-sm w-[100px]">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+whitespace-nowrap ${
                         advisor.isActive 
                           ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' 
                           : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
                       }`}>
                         {advisor.isActive ? 'Active' : 'Inactive'}
                       </span>
+                    </TableCell>
+                    
+                    {/* Smartflo */}
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 w-[120px]">
+                      {!advisor.agentId || !advisor.smartfloId ? (
+                        <button
+                          onClick={() => handleGenerateSmartflo(advisor.id)}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded whitespace-nowrap transition-colors"
+                        >
+                          Generate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleViewSmartflo(advisor)}
+                          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded whitespace-nowrap transition-colors"
+                        >
+                          View
+                        </button>
+                      )}
                     </TableCell>
                     
                     {/* Actions */}

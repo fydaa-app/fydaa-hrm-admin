@@ -14,6 +14,8 @@ export interface AdvisorDetails {
   attachment1?: string;
   attachment2?: string;
   isActive: boolean;
+  agentId?: string | null;
+  smartfloId?: string | null;
 }
 
 export interface CreateAdvisorRequest {
