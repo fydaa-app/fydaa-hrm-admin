@@ -20,6 +20,9 @@ interface EmployeeList {
     managerId?: number;
     joinDate: string;
     isActive: boolean;
+    monthlyTarget?: number;
+    quarterlyTarget?: number;
+    annualTarget?: number;
 }
 
 interface EmployeeApiResponse {
