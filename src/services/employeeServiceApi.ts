@@ -22,6 +22,9 @@ export interface EmployeeDetails {
   managerId?: number;
   managerName:string;
   isActive?: boolean;
+  monthlyTarget?: number;
+  quarterlyTarget?: number;
+  annualTarget?: number;
 }
 
 export interface HierarchyData {
@@ -39,9 +42,12 @@ export interface CreateEmployeeRequest {
   email: string;
   mobileNumber: string;
   role: string;
-  managerId?: number;  // Use consistent field name
+  managerId?: number;
   level: number;
   isActive?: boolean;
+  monthlyTarget?: number;
+  quarterlyTarget?: number;
+  annualTarget?: number;
 }
 
 export interface UpdateEmployeeRequest extends CreateEmployeeRequest {
@@ -63,6 +69,9 @@ class EmployeeServiceApi extends API {
       mobileNumber: data.mobileNumber,
       email: data.email,
       isActive: true,
+      monthlyTarget: data.monthlyTarget,
+      quarterlyTarget: data.quarterlyTarget,
+      annualTarget: data.annualTarget,
     });
    
   }

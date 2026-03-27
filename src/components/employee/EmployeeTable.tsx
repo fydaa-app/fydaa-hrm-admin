@@ -21,7 +21,10 @@ export interface EmployeeTableProps {
     managerId?: number;
     joinDate:string;
     referralCode?: string;
-    isActive: boolean; // Add isActive field
+    isActive: boolean;
+    monthlyTarget?: number;
+    quarterlyTarget?: number;
+    annualTarget?: number;
   }[];
   error: string | null;
 }
@@ -84,6 +87,15 @@ export default function EmployeeTable({
                     Referral Code
                   </TableCell>
                   <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
+                    Monthly Target
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
+                    Quarterly Target
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
+                    Annual Target
+                  </TableCell>
+                  <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400">
                     Actions
                   </TableCell>
                 </TableRow>
@@ -129,6 +141,15 @@ export default function EmployeeTable({
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       {employee.referralCode}
                     </TableCell>      
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {employee.monthlyTarget ? `₹${employee.monthlyTarget.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {employee.quarterlyTarget ? `₹${employee.quarterlyTarget.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                      {employee.annualTarget ? `₹${employee.annualTarget.toLocaleString()}` : '-'}
+                    </TableCell>
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                       <div className="flex space-x-2">
                         <button

@@ -9,8 +9,8 @@ export interface PaginationData {
 class StudentServiceApi extends API {    
     
     async getStudents(data: PaginationData): Promise<APIResponse> {
-        return this.get(ApiType.private, `${this.baseUrl}/auth/student-list?page=${data.page}&search=${data.search}`)
+        return this.get(ApiType.private, `${this.baseUrl}/referrals/website-lead-students?page=${data.page}&search=${data.search}`)
     }
 }
 
-export const studentServiceApi = new StudentServiceApi(settings.STUDENT_SERVICE)
+export const studentServiceApi = new StudentServiceApi(settings.API_SERVICE)

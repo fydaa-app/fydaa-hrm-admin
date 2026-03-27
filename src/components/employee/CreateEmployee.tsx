@@ -34,6 +34,9 @@ const DEFAULT_EMPLOYEE_DATA: CreateEmployeeRequest = {
   level: 0,
   role: "",
   isActive: true,
+  monthlyTarget: undefined,
+  quarterlyTarget: undefined,
+  annualTarget: undefined,
 };
 
 export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps) {
@@ -164,143 +167,189 @@ export default function CreateEmployee({ isOpen, onClose }: CreateEmployeeProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black-opacity flex items-center justify-center p-4 z-99999">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md dark:bg-gray-800">
-        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-99999 overflow-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl dark:bg-gray-800 my-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
           <h2 className="text-xl font-semibold dark:text-white">Create New Employee</h2>
           <button
             onClick={closeModal}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-300"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-300 text-2xl leading-none"
           >
             ×
           </button>
         </div>
 
-        <form onSubmit={handleCreateEmployee} className="p-4 space-y-4">
-          <div>
-            <Label htmlFor="name">Employee Name *</Label>
-            <Input
-              id="name"
-              value={employeeMetadata.name}
-              onChange={(e) => setEmployeeMetadata(prev => ({
-                ...prev,
-                name: e.target.value
-              }))}
-              error={!!errors.name}
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={employeeMetadata.email}
-              onChange={(e) => setEmployeeMetadata(prev => ({
-                ...prev,
-                email: e.target.value
-              }))}
-              error={!!errors.email}
-            />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="phone">Phone *</Label>
-            <Input
-              id="phone"
-              value={employeeMetadata.mobileNumber}
-              onChange={(e) => setEmployeeMetadata(prev => ({
-                ...prev,
-                mobileNumber: e.target.value
-              }))}
-            />           
-          </div>
-
-          <div>
-            <Label htmlFor="level">Level *</Label>
-            <Select
-              defaultValue={String(employeeMetadata.level) || ""}
-              onChange={handleLevelChange}
-              options={[               
-                ...hierarchies.map(h => ({
-                  value: h.level,
-                  label: `${h.hierarchyName} | Level ${h.level}`
-                }))
-              ]}
-            />
-            {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="manager">Manager *</Label>
-            <div className="relative">
+        <form onSubmit={handleCreateEmployee} className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Employee Name *</Label>
               <Input
-                id="manager"
-                value={searchQuery}
-                onChange={handleManagerSearch}
-                placeholder={employeeMetadata.level ? "Search managers..." : "Select level first"}
-                disabled={!employeeMetadata.level}
-                error={!!errors.manager}
-              />
-              {isLoadingManagers && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
-                </div>
-              )}
-              
-              {!isLoadingManagers && managerResults.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                  {managerResults.map(manager => (
-                    <button
-                      key={manager.id}
-                      type="button"
-                      className="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
-                      onClick={() => {
-                        setEmployeeMetadata((prev: CreateEmployeeRequest): CreateEmployeeRequest => ({
-                          ...prev,
-                          managerId: manager.id
-                        }));
-                        setSearchQuery(manager.name);
-                        setManagerResults([]);
-                      }}
-                    >
-                      {manager.name} ({manager.email})
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            {errors.manager && <p className="text-red-500 text-sm mt-1">{errors.manager}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="isActive">Status</Label>
-            <div className="flex items-center mt-2">
-              <button
-                type="button"
-                onClick={() => setEmployeeMetadata(prev => ({
+                id="name"
+                value={employeeMetadata.name}
+                onChange={(e) => setEmployeeMetadata(prev => ({
                   ...prev,
-                  isActive: !prev.isActive
+                  name: e.target.value
                 }))}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  employeeMetadata.isActive ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    employeeMetadata.isActive ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                error={!!errors.name}
+              />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={employeeMetadata.email}
+                onChange={(e) => setEmployeeMetadata(prev => ({
+                  ...prev,
+                  email: e.target.value
+                }))}
+                error={!!errors.email}
+              />
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="phone">Phone *</Label>
+              <Input
+                id="phone"
+                value={employeeMetadata.mobileNumber}
+                onChange={(e) => setEmployeeMetadata(prev => ({
+                  ...prev,
+                  mobileNumber: e.target.value
+                }))}
+              />           
+            </div>
+
+            <div>
+              <Label htmlFor="level">Level *</Label>
+              <Select
+                defaultValue={String(employeeMetadata.level) || ""}
+                onChange={handleLevelChange}
+                options={[               
+                  ...hierarchies.map(h => ({
+                    value: h.level,
+                    label: `${h.hierarchyName} | Level ${h.level}`
+                  }))
+                ]}
+              />
+              {errors.level && <p className="text-red-500 text-sm mt-1">{errors.level}</p>}
+            </div>
+
+            <div className="sm:col-span-2">
+              <Label htmlFor="manager">Manager *</Label>
+              <div className="relative">
+                <Input
+                  id="manager"
+                  value={searchQuery}
+                  onChange={handleManagerSearch}
+                  placeholder={employeeMetadata.level ? "Search managers..." : "Select level first"}
+                  disabled={!employeeMetadata.level}
+                  error={!!errors.manager}
                 />
-              </button>
-              <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                {employeeMetadata.isActive ? 'Active' : 'Inactive'}
-              </span>
+                {isLoadingManagers && (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                  </div>
+                )}
+                
+                {!isLoadingManagers && managerResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                    {managerResults.map(manager => (
+                      <button
+                        key={manager.id}
+                        type="button"
+                        className="w-full p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
+                        onClick={() => {
+                          setEmployeeMetadata((prev: CreateEmployeeRequest): CreateEmployeeRequest => ({
+                            ...prev,
+                            managerId: manager.id
+                          }));
+                          setSearchQuery(manager.name);
+                          setManagerResults([]);
+                        }}
+                      >
+                        {manager.name} ({manager.email})
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {errors.manager && <p className="text-red-500 text-sm mt-1">{errors.manager}</p>}
+            </div>
+
+            <div>
+              <Label htmlFor="isActive">Status</Label>
+              <div className="flex items-center mt-2">
+                <button
+                  type="button"
+                  onClick={() => setEmployeeMetadata(prev => ({
+                    ...prev,
+                    isActive: !prev.isActive
+                  }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    employeeMetadata.isActive ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      employeeMetadata.isActive ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {employeeMetadata.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+
+            <div></div>
+
+            <div>
+              <Label htmlFor="monthlyTarget">Monthly Target (Optional)</Label>
+              <Input
+                id="monthlyTarget"
+                type="number"
+                value={employeeMetadata.monthlyTarget || ''}
+                onChange={(e) => setEmployeeMetadata(prev => ({
+                  ...prev,
+                  monthlyTarget: e.target.value ? Number(e.target.value) : undefined
+                }))}
+                placeholder="Enter monthly target"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="quarterlyTarget">Quarterly Target (Optional)</Label>
+              <Input
+                id="quarterlyTarget"
+                type="number"
+                value={employeeMetadata.quarterlyTarget || ''}
+                onChange={(e) => setEmployeeMetadata(prev => ({
+                  ...prev,
+                  quarterlyTarget: e.target.value ? Number(e.target.value) : undefined
+                }))}
+                placeholder="Enter quarterly target"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="annualTarget">Annual Target (Optional)</Label>
+              <Input
+                id="annualTarget"
+                type="number"
+                value={employeeMetadata.annualTarget || ''}
+                onChange={(e) => setEmployeeMetadata(prev => ({
+                  ...prev,
+                  annualTarget: e.target.value ? Number(e.target.value) : undefined
+                }))}
+                placeholder="Enter annual target"
+              />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4 mt-4 border-t dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
             <button
               type="button"
               onClick={closeModal}
