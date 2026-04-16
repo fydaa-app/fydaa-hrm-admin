@@ -27,6 +27,7 @@ export interface CreateAdvisorRequest {
   attachment1?: File;
   attachment2?: File;
   isActive: boolean;
+  employeeId?: number;
 }
 
 export interface UpdateAdvisorRequest {
@@ -62,8 +63,12 @@ class AdvisorServiceApi extends API {
       formData.append('description', data.description.trim());
       formData.append('age', data.age.toString());
       formData.append('experienceInYears', data.experienceInYears.toString());
-      formData.append('isActive', data.isActive.toString());
-      
+formData.append('isActive', data.isActive.toString());
+       
+      if (data.employeeId) {
+        formData.append('employeeId', data.employeeId.toString());
+      }
+       
       // Append files - IMPORTANT: Use the exact field names your backend expects
       if (data.photo) {
         formData.append('photo', data.photo, data.photo.name);
@@ -168,6 +173,54 @@ class AdvisorServiceApi extends API {
       return response;
     } catch (error) {
       console.error('Error in deleteAdvisor:', error);
+      throw error;
+    }
+  }
+
+  async updateSmartflo(
+    id: number,
+    data: { agentId: string; smartfloId: string; tataTeleUserId: string; mobile: string; employeeId?: number; password?: string; oldMobile?: string },
+  ): Promise<APIResponse> {
+    try {
+      const response = await this.patch(
+        ApiType.private,
+        `${this.baseUrl}/referrals/advisor/${id}/update-smartflo`,
+        data,
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in updateSmartflo:', error);
+      throw error;
+    }
+  }
+
+  async clearSmartflo(id: number): Promise<APIResponse> {
+    try {
+      const response = await this.patch(
+        ApiType.private,
+        `${this.baseUrl}/referrals/advisor/${id}/clear-smartflo`,
+        {},
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in clearSmartflo:', error);
+      throw error;
+    }
+  }
+
+  async reassignUsers(
+    fromAdvisorId: number,
+    toAdvisorIds: number[],
+  ): Promise<APIResponse> {
+    try {
+      const response = await this.post(
+        ApiType.private,
+        `${this.baseUrl}/referrals/advisor/reassign-users`,
+        { fromAdvisorId, toAdvisorIds },
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in reassignUsers:', error);
       throw error;
     }
   }

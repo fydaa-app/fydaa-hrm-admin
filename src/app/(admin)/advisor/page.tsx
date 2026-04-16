@@ -21,6 +21,10 @@ interface AdvisorList {
   attachment1?: string;
   attachment2?: string;
   isActive: boolean;
+  employeeId?: number;
+  agentId?: string;
+  smartfloId?: string;
+  tataTeleUserId?: string;
 }
 
 interface AdvisorApiResponse {
@@ -199,32 +203,42 @@ function AdvisorListClient() {
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
+return (
+  <div className="w-full max-w-[100%] 2xl:max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+    
+    <PageBreadcrumb pageTitle="Advisor" />
 
-  return (
-    <div>
-      <PageBreadcrumb pageTitle="Advisor" />
-      <div className="space-y-6">
-        <ComponentCard title="Advisor List">
-          <div className="flex justify-self-end">
+    <div className="space-y-6">
+      <ComponentCard title="Advisor List">
+
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4 mb-4">
+          
+          <div className="w-full sm:flex-1 sm:max-w-sm order-2 sm:order-1">
             <SearchWrapper />
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="w-auto inline-flex bg-brand-500 text-white hover:bg-brand-600 
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 px-4 py-2 
-              rounded-lg text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed ml-1"
-            >
-              Create New Advisor
-            </button>
           </div>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="w-full sm:w-auto inline-flex bg-brand-500 text-white hover:bg-brand-600 
+            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 px-4 py-2 
+            rounded-lg text-sm font-medium disabled:opacity-70 disabled:cursor-not-allowed order-1 sm:order-2"
+          >
+            Create New Advisor
+          </button>
+        </div>
+
+        {/* 🔥 FIXED TABLE CONTAINER */}
+        <div className="w-full overflow-x-auto">
 
           <CreateAdvisor
             isOpen={isModalOpen}
             onClose={() => {
               setIsModalOpen(false);
-              fetchData(); // Refresh data after creating
+              fetchData();
             }}
           />
-          
+
           {isSearching ? (
             <div className="flex justify-center py-8">
               <svg
@@ -233,37 +247,37 @@ function AdvisorListClient() {
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
               </svg>
             </div>
           ) : (
             <>
-              <AdvisorTable advisors={advisors} error={error} onUpdate={fetchData} />
+              <AdvisorTable
+                advisors={advisors}
+                error={error}
+                onUpdate={fetchData}
+              />
+
               {totalCount > 0 && (
-                <Pagination
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+                <div className="mt-4">
+                  <Pagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
               )}
             </>
           )}
-        </ComponentCard>
-      </div>
+        </div>
+
+      </ComponentCard>
     </div>
-  );
+  </div>
+);
 }
 
 // Main page with Suspense wrapper

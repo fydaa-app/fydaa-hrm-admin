@@ -17,6 +17,10 @@ interface EditAdvisorProps {
 
 export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorProps) {
   const router = useRouter();
+  const [allAdvisors, setAllAdvisors] = useState<AdvisorDetails[]>([]);
+  const [selectedTargetAdvisors, setSelectedTargetAdvisors] = useState<number[]>([]);
+  const [isMappingUsers, setIsMappingUsers] = useState(false);
+  const [showMapConfirm, setShowMapConfirm] = useState(false);
   const [advisorMetadata, setAdvisorMetadata] = useState({
     id: advisor.id,
     name: advisor.name,
@@ -49,8 +53,29 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
       setAttachment1(null);
       setAttachment2(null);
       setErrors({});
+      setSelectedTargetAdvisors([]);
     }
   }, [isOpen, advisor]);
+
+  useEffect(() => {
+    const fetchAdvisors = async () => {
+      try {
+        const response = await advisorServiceApi.getAdvisors({
+          page: 1,
+          search: '',
+        });
+        const advisorsData = response.data as { data?: AdvisorDetails[] };
+        if (advisorsData?.data) {
+          setAllAdvisors(advisorsData.data.filter((a: AdvisorDetails) => a.id !== advisor?.id));
+        }
+      } catch (error) {
+        console.error('Error fetching advisors:', error);
+      }
+    };
+    if (isOpen) {
+      fetchAdvisors();
+    }
+  }, [isOpen, advisor?.id]);
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -65,13 +90,13 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
       newErrors.email = 'Invalid email format';
     }
     
-    // Mobile (10-digit Indian) OR Landline (8-digit)
-    const mobileRegex = /^([6-9]\d{9}|\d{8})$/;
+    // Mobile (10 or 11 digit)
+    const mobileRegex = /^([0-9]\d{9,10})$/;
 
     if (!advisorMetadata.mobile.trim()) {
-      newErrors.mobile = 'Mobile or landline number is required';
+      newErrors.mobile = 'Mobile number is required';
     } else if (!mobileRegex.test(advisorMetadata.mobile)) {
-      newErrors.mobile = 'Invalid number (10-digit mobile or 8-digit landline)';
+      newErrors.mobile = 'Invalid number (10 or 11 digit)';
     }
     
     if (!advisorMetadata.description.trim()) newErrors.description = 'Description is required';
@@ -91,6 +116,38 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleMapUsers = async () => {
+    if (selectedTargetAdvisors.length === 0) {
+      toast.error('Please select at least one target advisor');
+      return;
+    }
+
+    setShowMapConfirm(true);
+  };
+
+  const confirmMapUsers = async () => {
+    setShowMapConfirm(false);
+    setIsMappingUsers(true);
+    try {
+      const response = await advisorServiceApi.reassignUsers(
+        advisor.id,
+        selectedTargetAdvisors,
+      ) as { status: number; message?: string };
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success(response.message || 'Users mapped successfully');
+        setSelectedTargetAdvisors([]);
+      } else {
+        toast.error(response.message || 'Failed to map users');
+      }
+    } catch (error) {
+      console.error('Error mapping users:', error);
+      toast.error('Failed to map users');
+    } finally {
+      setIsMappingUsers(false);
+    }
   };
 
   const handleUpdateAdvisor = async (e: React.FormEvent) => {
@@ -245,11 +302,11 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
                 value={advisorMetadata.mobile}
                 onChange={(e) => setAdvisorMetadata(prev => ({
                   ...prev,
-                  mobile: e.target.value.replace(/\D/g, '').slice(0, 10)
+                  mobile: e.target.value.replace(/\D/g, '').slice(0, 11)
                 }))}
                 error={!!errors.mobile}
-                placeholder="9876543210 or 12345678"
-                maxLength={10}
+                placeholder="9876543210"
+                maxLength={11}
               />
               {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
             </div>
@@ -465,6 +522,67 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
               </span>
             </div>
           </div>
+
+          <div className="border-t dark:border-gray-700 pt-4 mt-4">
+            <Label>Map Users to Advisor(s)</Label>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+              Move users from this advisor to another advisor(s) using round-robin distribution
+            </p>
+            <select
+              multiple
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white h-32"
+              value={selectedTargetAdvisors.map(String)}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => Number(option.value));
+                setSelectedTargetAdvisors(selected);
+              }}
+            >
+              {allAdvisors.map((adv) => (
+                <option key={adv.id} value={adv.id}>
+                  {adv.name} ({adv.email})
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Hold Ctrl/Cmd to select multiple advisors
+            </p>
+            <button
+              type="button"
+              onClick={handleMapUsers}
+              disabled={isMappingUsers || selectedTargetAdvisors.length === 0}
+              className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-sm"
+            >
+              {isMappingUsers ? 'Mapping...' : 'Map Users'}
+            </button>
+          </div>
+
+          {showMapConfirm && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md">
+                <h3 className="text-lg font-semibold mb-2 dark:text-white">Confirm User Mapping</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Warning: This action cannot be undone. All users from this advisor will be remapped to the selected advisor(s).
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowMapConfirm(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-600 dark:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmMapUsers}
+                    disabled={isMappingUsers}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400"
+                  >
+                    {isMappingUsers ? 'Mapping...' : 'Confirm & Map'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4 border-t dark:border-gray-700">
             <button
