@@ -123,6 +123,14 @@ class EmployeeServiceApi extends API {
     return this.get(ApiType.private,`${this.baseUrl}/referrals/managers/${data.level}`);
   }
 
+  async getDesignations(): Promise<APIResponse> {
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/hierarchies`);
+  }
+
+  async getEmployeesByDesignation(role: string): Promise<APIResponse> {
+    return this.get(ApiType.private, `${this.baseUrl}/referrals/employees-by-role/${role}`);
+  }
+
 }
 
 export const employeeServiceApi = new EmployeeServiceApi(settings.EMPLOYEE_SERVICE);

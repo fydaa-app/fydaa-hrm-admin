@@ -1,13 +1,27 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import Input from '@/components/form/input/InputField';
 import Label from "@/components/form/Label";
 import { 
-    CreateAdvisorRequest,
-    advisorServiceApi
+  CreateAdvisorRequest,
+  advisorServiceApi
 } from "@/services/advisorServiceApi";
+import { employeeServiceApi } from "@/services/employeeServiceApi";
+
+interface Designation {
+  hierarchyName: string;
+  level: string;
+}
+
+interface Employee {
+  id: number;
+  name: string;
+  email: string;
+  mobileNumber: string;
+  role: string;
+}
 
 interface CreateAdvisorProps {
   isOpen: boolean;
@@ -27,18 +41,92 @@ const DEFAULT_ADVISOR_DATA: Omit<CreateAdvisorRequest, 'photo' | 'attachment1' |
 export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
   const router = useRouter();
   const [advisorMetadata, setAdvisorMetadata] = useState(DEFAULT_ADVISOR_DATA);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [attachment1, setAttachment1] = useState<File | null>(null);
   const [attachment2, setAttachment2] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingButton, setIsLoadingButton] = useState(false);
   
+  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedDesignation, setSelectedDesignation] = useState<string>("");
+  const [isLoadingDesignations, setIsLoadingDesignations] = useState(false);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchDesignations();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (selectedDesignation) {
+      fetchEmployeesByDesignation(selectedDesignation);
+    } else {
+      setEmployees([]);
+    }
+  }, [selectedDesignation]);
+
+  const fetchDesignations = async () => {
+    setIsLoadingDesignations(true);
+    try {
+      const response = await employeeServiceApi.getDesignations();
+      const data = response.data as { success: boolean; data: Designation[] };
+      if (data?.success && data.data) {
+        setDesignations(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching designations:', error);
+    } finally {
+      setIsLoadingDesignations(false);
+    }
+  };
+
+  const fetchEmployeesByDesignation = async (role: string) => {
+    setIsLoadingEmployees(true);
+    try {
+      const response = await employeeServiceApi.getEmployeesByDesignation(role);
+      const data = response.data as { success: boolean; data: Employee[] };
+      if (data?.success && data.data) {
+        setEmployees(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    } finally {
+      setIsLoadingEmployees(false);
+    }
+  };
+
+  const handleEmployeeChange = (employeeId: string) => {
+    const empId = parseInt(employeeId);
+    setSelectedEmployeeId(empId || null);
+    
+    if (empId) {
+      const employee = employees.find(e => e.id === empId);
+      if (employee) {
+        setAdvisorMetadata(prev => ({
+          ...prev,
+          name: employee.name,
+          email: employee.email,
+          mobile: employee.mobileNumber,
+        }));
+      }
+    } else {
+      setAdvisorMetadata(prev => ({
+        ...prev,
+        name: "",
+        email: "",
+        mobile: "",
+      }));
+    }
+  };
+  
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
     if (!advisorMetadata.name.trim()) newErrors.name = 'Name is required';
     
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!advisorMetadata.email.trim()) {
       newErrors.email = 'Email is required';
@@ -46,13 +134,11 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
       newErrors.email = 'Invalid email format';
     }
     
-    // Mobile (10-digit) OR landline (8-digit)
-    const phoneRegex = /^([6-9]\d{9}|\d{8})$/;
-
+    const phoneRegex = /^([0-9]\d{9,10})$/;
     if (!advisorMetadata.mobile.trim()) {
-      newErrors.mobile = 'Mobile or landline number is required';
+      newErrors.mobile = 'Mobile number is required';
     } else if (!phoneRegex.test(advisorMetadata.mobile)) {
-      newErrors.mobile = 'Invalid number (10-digit mobile or 8-digit landline)';
+      newErrors.mobile = 'Invalid number (10 or 11 digit)';
     }
     
     if (!advisorMetadata.description.trim()) newErrors.description = 'Description is required';
@@ -87,9 +173,9 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
         photo: photo!,
         attachment1: attachment1 || undefined,
         attachment2: attachment2 || undefined,
+        employeeId: selectedEmployeeId || undefined,
       });
       
-      // Check for successful response (200 or 201)
       if (response?.status === 200 || response?.status === 201) {
         toast.success('Advisor created successfully');
         router.refresh();
@@ -107,6 +193,9 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
 
   const closeModal = () => {
     setAdvisorMetadata(DEFAULT_ADVISOR_DATA);
+    setSelectedEmployeeId(null);
+    setSelectedDesignation("");
+    setEmployees([]);
     setPhoto(null);
     setAttachment1(null);
     setAttachment2(null);
@@ -118,24 +207,21 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error('File size should be less than 5MB');
-      e.target.value = ''; // Clear the input
+      e.target.value = '';
       return;
     }
     
     if (fileType === 'photo') {
-      // Validate image file type
       const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validImageTypes.includes(file.type)) {
         toast.error('Photo must be an image file (JPEG, PNG, GIF, or WebP)');
-        e.target.value = ''; // Clear the input
+        e.target.value = '';
         return;
       }
       setPhoto(file);
-      // Clear error if exists
       if (errors.photo) {
         setErrors(prev => {
           const newErrors = { ...prev };
@@ -153,7 +239,6 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
   const removeFile = (fileType: 'photo' | 'attachment1' | 'attachment2') => {
     if (fileType === 'photo') {
       setPhoto(null);
-      // Reset file input
       const input = document.getElementById('photo') as HTMLInputElement;
       if (input) input.value = '';
     } else if (fileType === 'attachment1') {
@@ -185,22 +270,64 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
         </div>
 
         <form onSubmit={handleCreateAdvisor} className="p-4 space-y-4">
-          <div>
-            <Label htmlFor="name">Advisor Name *</Label>
-            <Input
-              id="name"
-              value={advisorMetadata.name}
-              onChange={(e) => setAdvisorMetadata(prev => ({
-                ...prev,
-                name: e.target.value
-              }))}
-              error={!!errors.name}
-              placeholder="Enter advisor name"
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3">Select Employee</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="designation">Designation *</Label>
+                <select
+                  id="designation"
+                  value={selectedDesignation}
+                  onChange={(e) => {
+                    setSelectedDesignation(e.target.value);
+                    setSelectedEmployeeId(null);
+                  }}
+                  disabled={isLoadingDesignations}
+                  className="w-full rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:text-white/90"
+                >
+                  <option value="">{isLoadingDesignations ? 'Loading...' : 'Select Designation'}</option>
+                  {designations.map(d => (
+                    <option key={d.level} value={d.level}>{d.hierarchyName}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="employee">Employee *</Label>
+                <select
+                  id="employee"
+                  value={selectedEmployeeId || ""}
+                  onChange={(e) => handleEmployeeChange(e.target.value)}
+                  disabled={!selectedDesignation || isLoadingEmployees}
+                  className="w-full rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:text-white/90"
+                >
+                  <option value="">{isLoadingEmployees ? 'Loading...' : 'Select Employee'}</option>
+                  {employees.map(e => (
+                    <option key={e.id} value={e.id}>{e.name} ({e.mobileNumber})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Advisor Name *</Label>
+              <Input
+                id="name"
+                value={advisorMetadata.name}
+                onChange={(e) => setAdvisorMetadata(prev => ({
+                  ...prev,
+                  name: e.target.value
+                }))}
+                error={!!errors.name}
+                placeholder="Enter advisor name"
+                disabled={!!selectedEmployeeId}
+              />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            </div>
+
             <div>
               <Label htmlFor="email">Email *</Label>
               <Input
@@ -213,10 +340,13 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
                 }))}
                 error={!!errors.email}
                 placeholder="example@email.com"
+                disabled={!!selectedEmployeeId}
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="mobile">Mobile/Landline Number *</Label>
               <Input
@@ -225,30 +355,31 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
                 value={advisorMetadata.mobile}
                 onChange={(e) => setAdvisorMetadata(prev => ({
                   ...prev,
-                  mobile: e.target.value.replace(/\D/g, '').slice(0, 10)
+                  mobile: e.target.value.replace(/\D/g, '').slice(0, 11)
                 }))}
                 error={!!errors.mobile}
-                placeholder="9876543210 or 12345678"
-                maxLength={10}
+                placeholder="9876543210"
+                maxLength={11}
+                disabled={!!selectedEmployeeId}
               />
               {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
             </div>
-          </div>
 
-          <div>
-            <Label htmlFor="description">Description *</Label>
-            <textarea
-              id="description"
-              value={advisorMetadata.description}
-              onChange={(e) => setAdvisorMetadata(prev => ({
-                ...prev,
-                description: e.target.value
-              }))}
-              className={`w-full rounded-lg border ${errors.description ? 'border-red-500' : 'border-gray-200'} bg-transparent py-2.5 px-4 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:text-white/90`}
-              rows={4}
-              placeholder="Enter advisor description..."
-            />
-            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            <div>
+              <Label htmlFor="description">Description *</Label>
+              <textarea
+                id="description"
+                value={advisorMetadata.description}
+                onChange={(e) => setAdvisorMetadata(prev => ({
+                  ...prev,
+                  description: e.target.value
+                }))}
+                className={`w-full rounded-lg border ${errors.description ? 'border-red-500' : 'border-gray-200'} bg-transparent py-2.5 px-4 text-sm text-gray-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:text-white/90`}
+                rows={4}
+                placeholder="Enter description..."
+              />
+              {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -289,7 +420,6 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
             </div>
           </div>
 
-          {/* Photo Upload */}
           <div>
             <Label htmlFor="photo">Photo * (JPEG, PNG, GIF - Max 5MB)</Label>
             <input
@@ -314,7 +444,6 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
             )}
           </div>
 
-          {/* Attachment 1 */}
           <div>
             <Label htmlFor="attachment1">Attachment 1 (Optional - Max 5MB)</Label>
             <input
@@ -337,7 +466,6 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
             )}
           </div>
 
-          {/* Attachment 2 */}
           <div>
             <Label htmlFor="attachment2">Attachment 2 (Optional - Max 5MB)</Label>
             <input
@@ -360,7 +488,6 @@ export default function CreateAdvisor({ isOpen, onClose }: CreateAdvisorProps) {
             )}
           </div>
 
-          {/* Status Toggle */}
           <div>
             <Label htmlFor="isActive">Status</Label>
             <div className="flex items-center mt-2">

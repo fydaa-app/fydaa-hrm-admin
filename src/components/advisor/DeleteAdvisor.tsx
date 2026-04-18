@@ -4,23 +4,28 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { advisorServiceApi } from "@/services/advisorServiceApi";
 
+interface Advisor {
+  id: number;
+  name: string;
+  agentId?: string;
+  smartfloId?: string;
+  tataTeleUserId?: string;
+}
+
 interface DeleteAdvisorProps {
   isOpen: boolean;
   onClose: () => void;
-  advisorId: number;
-  advisorName: string;
+  advisor: Advisor;
 }
 
-export default function DeleteAdvisor({ isOpen, onClose, advisorId, advisorName }: DeleteAdvisorProps) {
+export default function DeleteAdvisor({ isOpen, onClose, advisor }: DeleteAdvisorProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  // TODO: This function deletes an advisor - ensure backend API endpoint is connected
   const handleDeleteAdvisor = async () => {
     setIsLoading(true);
     try {
-      // TODO: Ensure advisorServiceApi.deleteAdvisor properly deletes from database
-      await advisorServiceApi.deleteAdvisor(advisorId);
+      await advisorServiceApi.deleteAdvisor(advisor.id);
       toast.success('Advisor deleted successfully');
       router.refresh();
       onClose();
@@ -33,6 +38,8 @@ export default function DeleteAdvisor({ isOpen, onClose, advisorId, advisorName 
   };
 
   if (!isOpen) return null;
+
+  const hasSmartflo = !!(advisor.agentId || advisor.smartfloId || advisor.tataTeleUserId);
 
   return (
     <div className="fixed inset-0 bg-black-opacity flex items-center justify-center p-4 z-99999">
@@ -48,10 +55,16 @@ export default function DeleteAdvisor({ isOpen, onClose, advisorId, advisorName 
         </div>
 
         <div className="p-4">
-          <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Are you sure you want to delete advisor <span className="font-semibold">{advisorName}</span>? 
-            This action cannot be undone.
-          </p>
+          {hasSmartflo ? (
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Please disable smartflo before deleting advisor <span className="font-semibold">{advisor.name}</span>.
+            </p>
+          ) : (
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Are you sure you want to delete advisor <span className="font-semibold">{advisor.name}</span>? 
+              This action cannot be undone.
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end gap-3 p-4 border-t dark:border-gray-700">
@@ -63,9 +76,9 @@ export default function DeleteAdvisor({ isOpen, onClose, advisorId, advisorName 
             Cancel
           </button>
           <button
-            disabled={isLoading}
+            disabled={isLoading || hasSmartflo}
             onClick={handleDeleteAdvisor}
-            className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-red-400"
+            className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Deleting...' : 'Delete Advisor'}
           </button>
