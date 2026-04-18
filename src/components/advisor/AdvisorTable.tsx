@@ -324,8 +324,8 @@ export default function AdvisorTable({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: process.env.NEXT_PUBLIC_TATA_TELE_USER_NAME,
-          password: process.env.NEXT_PUBLIC_TATA_TELE_PASSWORD,
+          email: process.env.TATA_TELE_USER_NAME,
+          password: process.env.TATA_TELE_PASSWORD,
         }),
       });
       const tokenData = await tokenResponse.json();
@@ -563,8 +563,8 @@ export default function AdvisorTable({
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({
-                                    email: process.env.NEXT_PUBLIC_TATA_TELE_USER_NAME,
-                                    password: process.env.NEXT_PUBLIC_TATA_TELE_PASSWORD,
+                                    email: process.env.TATA_TELE_USER_NAME,
+                                    password: process.env.TATA_TELE_PASSWORD,
                                   }),
                                 });
                                 const data = await response.json();
