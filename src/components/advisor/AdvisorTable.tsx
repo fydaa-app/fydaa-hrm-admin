@@ -320,16 +320,7 @@ export default function AdvisorTable({
     setIsSubmittingSmartflo(true);
 
     try {
-      const tokenResponse = await fetch('https://api-smartflo.tatateleservices.com/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: process.env.TATA_TELE_USER_NAME,
-          password: process.env.TATA_TELE_PASSWORD,
-        }),
-      });
-      const tokenData = await tokenResponse.json();
-      const token = tokenData.access_token;
+      const { token } = await advisorServiceApi.getSmartfloToken();
 
       if (!token) {
         toast.error('Failed to get Smartflo token');
@@ -559,18 +550,10 @@ export default function AdvisorTable({
                               setIsLoadingSmartflo(true);
                               setEnableSmartfloModalOpen(true);
                               try {
-                                const response = await fetch('https://api-smartflo.tatateleservices.com/v1/auth/login', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    email: process.env.TATA_TELE_USER_NAME,
-                                    password: process.env.TATA_TELE_PASSWORD,
-                                  }),
-                                });
-                                const data = await response.json();
-                                if (data.success && data.access_token) {
-                                  localStorage.setItem('smartflo_token', data.access_token);
-                                  await fetchSmartfloNumbers(data.access_token);
+                                const { token } = await advisorServiceApi.getSmartfloToken();
+                                if (token) {
+                                  localStorage.setItem('smartflo_token', token);
+                                  await fetchSmartfloNumbers(token);
                                 } else {
                                   toast.error('Failed to get Smartflo token');
                                   setEnableSmartfloModalOpen(false);

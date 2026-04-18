@@ -224,6 +224,19 @@ formData.append('isActive', data.isActive.toString());
       throw error;
     }
   }
+
+  async getSmartfloToken(): Promise<{ token: string }> {
+    try {
+      const response = await this.get(
+        ApiType.private,
+        `${this.baseUrl}/referrals/smartflo/token`,
+      );
+      return response.data as { token: string };
+    } catch (error) {
+      console.error('Error getting Smartflo token:', error);
+      throw error;
+    }
+  }
 }
 
 // Export instance
