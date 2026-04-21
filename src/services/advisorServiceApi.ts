@@ -14,6 +14,10 @@ export interface AdvisorDetails {
   attachment1?: string;
   attachment2?: string;
   isActive: boolean;
+  employeeId?: number;
+  agentId?: string;
+  smartfloId?: string;
+  tataTeleUserId?: string;
 }
 
 export interface CreateAdvisorRequest {
