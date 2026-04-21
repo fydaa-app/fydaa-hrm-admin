@@ -127,19 +127,6 @@ export default function AdvisorTable({
     setDeleteSmartfloModalOpen(false);
   };
 
-  const fetchSmartfloNumbers = async (token: string) => {
-    try {
-      const response = await fetch('https://api-smartflo.tatateleservices.com/v1/my_number', {
-        headers: { Authorization: token, Accept: 'application/json' },
-      });
-      const data = await response.json();
-      const availableNumbers = (data || []).filter((num: { destination: string | null }) => !num.destination);
-      setSmartfloNumbers(availableNumbers);
-    } catch (error) {
-      console.error('Error fetching numbers:', error);
-    }
-  };
-
   const generatePassword = (): string => {
     const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const lower = "abcdefghijklmnopqrstuvwxyz";
@@ -320,16 +307,7 @@ export default function AdvisorTable({
     setIsSubmittingSmartflo(true);
 
     try {
-      const tokenResponse = await fetch('https://api-smartflo.tatateleservices.com/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: process.env.TATA_TELE_USER_NAME,
-          password: process.env.TATA_TELE_PASSWORD,
-        }),
-      });
-      const tokenData = await tokenResponse.json();
-      const token = tokenData.access_token;
+      const { token } = await advisorServiceApi.getSmartfloToken();
 
       if (!token) {
         toast.error('Failed to get Smartflo token');
@@ -382,9 +360,6 @@ export default function AdvisorTable({
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 min-w-[150px]">
                   Name
-                </TableCell>
-                <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 min-w-[150px]">
-                  Employee
                 </TableCell>
                 <TableCell isHeader className="px-5 py-3 font-bold text-gray-900 text-start text-theme-xs dark:text-gray-400 w-[120px]">
                   Mobile
@@ -442,16 +417,10 @@ export default function AdvisorTable({
                       <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate">
                         {advisor.name}
                       </span>
-                    </TableCell>
-                    
-                    {/* Employee */}
-                    <TableCell className="px-5 py-4 text-start min-w-[150px]">
-                      {advisor.employeeId ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                          ID: {advisor.employeeId}
+                      {advisor.employeeId && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 mt-1">
+                          Emp ID: {advisor.employeeId}
                         </span>
-                      ) : (
-                        <span className="text-gray-400 text-theme-sm">-</span>
                       )}
                     </TableCell>
                     
@@ -542,52 +511,6 @@ export default function AdvisorTable({
                     {/* Actions */}
                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400 w-[120px] sticky right-0 bg-white dark:bg-white/[0.03]">
                       <div className="flex space-x-2 whitespace-nowrap">
-                        {advisor.agentId && advisor.smartfloId ? (
-                          <button
-                            onClick={() => {
-                              setSelectedAdvisor(advisor);
-                              setDeleteSmartfloModalOpen(true);
-                            }}
-                            className="text-orange-600 hover:text-orange-800 font-medium"
-                          >
-                            Disable Smartflo
-                          </button>
-                        ) : (
-                          <button
-                            onClick={async () => {
-                              setSelectedAdvisor(advisor);
-                              setIsLoadingSmartflo(true);
-                              setEnableSmartfloModalOpen(true);
-                              try {
-                                const response = await fetch('https://api-smartflo.tatateleservices.com/v1/auth/login', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    email: process.env.TATA_TELE_USER_NAME,
-                                    password: process.env.TATA_TELE_PASSWORD,
-                                  }),
-                                });
-                                const data = await response.json();
-                                if (data.success && data.access_token) {
-                                  localStorage.setItem('smartflo_token', data.access_token);
-                                  await fetchSmartfloNumbers(data.access_token);
-                                } else {
-                                  toast.error('Failed to get Smartflo token');
-                                  setEnableSmartfloModalOpen(false);
-                                }
-                              } catch (error) {
-                                console.error('Error getting token:', error);
-                                toast.error('Failed to get Smartflo token');
-                                setEnableSmartfloModalOpen(false);
-                              } finally {
-                                setIsLoadingSmartflo(false);
-                              }
-                            }}
-                            className="text-green-600 hover:text-green-800 font-medium"
-                          >
-                            Enable Smartflo
-                          </button>
-                        )}
                         <button
                           onClick={() => {
                             setSelectedAdvisor(advisor);

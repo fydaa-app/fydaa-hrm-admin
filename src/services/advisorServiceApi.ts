@@ -14,6 +14,10 @@ export interface AdvisorDetails {
   attachment1?: string;
   attachment2?: string;
   isActive: boolean;
+  employeeId?: number;
+  agentId?: string;
+  smartfloId?: string;
+  tataTeleUserId?: string;
 }
 
 export interface CreateAdvisorRequest {
@@ -221,6 +225,19 @@ formData.append('isActive', data.isActive.toString());
       return response;
     } catch (error) {
       console.error('Error in reassignUsers:', error);
+      throw error;
+    }
+  }
+
+  async getSmartfloToken(): Promise<{ token: string }> {
+    try {
+      const response = await this.get(
+        ApiType.private,
+        `${this.baseUrl}/referrals/smartflo/token`,
+      );
+      return response.data as { token: string };
+    } catch (error) {
+      console.error('Error getting Smartflo token:', error);
       throw error;
     }
   }

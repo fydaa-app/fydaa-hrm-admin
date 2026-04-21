@@ -36,6 +36,14 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
   const [attachment2, setAttachment2] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingButton, setIsLoadingButton] = useState(false);
+  
+  // Smartflo states
+  const [smartfloNumbers, setSmartfloNumbers] = useState<{id: string; did: string}[]>([]);
+  const [selectedNumber, setSelectedNumber] = useState<string>("");
+  const [isLoadingSmartflo, setIsLoadingSmartflo] = useState(false);
+  const [isSubmittingSmartflo, setIsSubmittingSmartflo] = useState(false);
+  const [showSmartfloModal, setShowSmartfloModal] = useState(false);
+  const [showDeleteSmartfloModal, setShowDeleteSmartfloModal] = useState(false);
 
   useEffect(() => {
     if (isOpen && advisor) {
@@ -241,6 +249,188 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
       setAttachment2(null);
       const input = document.getElementById('attachment2') as HTMLInputElement;
       if (input) input.value = '';
+    }
+  };
+
+  // Smartflo helper functions
+  const generatePassword = (): string => {
+    const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lower = "abcdefghijklmnopqrstuvwxyz";
+    const special = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+    const digits = "0123456789";
+    
+    const upperChars = [upper[Math.floor(Math.random() * upper.length)], upper[Math.floor(Math.random() * upper.length)]];
+    const lowerChars = [lower[Math.floor(Math.random() * lower.length)], lower[Math.floor(Math.random() * lower.length)]];
+    const numberChars = [digits[Math.floor(Math.random() * digits.length)], digits[Math.floor(Math.random() * digits.length)]];
+    const specialChars = [special[Math.floor(Math.random() * special.length)], special[Math.floor(Math.random() * special.length)]];
+    
+    const startPool = upper + lower + digits;
+    const startChar = startPool[Math.floor(Math.random() * startPool.length)];
+    const endChar = startPool[Math.floor(Math.random() * startPool.length)];
+    
+    const middle = [...upperChars, ...lowerChars, ...numberChars, ...specialChars];
+    for (let i = middle.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [middle[i], middle[j]] = [middle[j], middle[i]];
+    }
+    
+    return startChar + middle.join("") + endChar;
+  };
+
+  const fetchSmartfloNumbers = async (token: string) => {
+    try {
+      const response = await fetch('https://api-smartflo.tatateleservices.com/v1/my_number', {
+        headers: { Authorization: token, Accept: 'application/json' },
+      });
+      const data = await response.json();
+      const availableNumbers = (data || []).filter((num: { destination: string | null }) => !num.destination);
+      setSmartfloNumbers(availableNumbers);
+    } catch (error) {
+      console.error('Error fetching numbers:', error);
+    }
+  };
+
+  const handleEnableSmartflo = async () => {
+    if (!selectedNumber) {
+      toast.error('Please select a phone number');
+      return;
+    }
+
+    setIsSubmittingSmartflo(true);
+
+    try {
+      const { token } = await advisorServiceApi.getSmartfloToken();
+      
+      const loginId = advisor.email.split('@')[0];
+      const password = generatePassword();
+
+      const response = await fetch('https://api-smartflo.tatateleservices.com/v1/user', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          create_agent: true,
+          status: true,
+          assign_extension: true,
+          name: advisor.name,
+          number: advisor.mobile,
+          email: advisor.email,
+          login_id: loginId,
+          password: password,
+          user_role: 92957,
+          caller_id: [parseInt(selectedNumber)],
+        }),
+      });
+
+      const responseText = await response.text();
+      if (!responseText) {
+        throw new Error('Empty response from Smartflo API');
+      }
+      
+      const data = JSON.parse(responseText);
+      if (data.success) {
+        const selectedNumberData = smartfloNumbers.find(n => n.id === selectedNumber);
+        const didNumber = selectedNumberData ? selectedNumberData.did.replace('+91', '0') : '';
+        
+        const smartfloUpdateResponse = await advisorServiceApi.updateSmartflo(advisor.id, {
+          agentId: data.data.agent_id,
+          smartfloId: data.data.agent_extension,
+          tataTeleUserId: data.data.id.toString(),
+          mobile: didNumber,
+          employeeId: advisor.employeeId,
+          password: password,
+          oldMobile: advisor.mobile,
+        });
+        
+        const responseData = smartfloUpdateResponse.data as { isAdmin?: boolean };
+        const isAdmin = responseData?.isAdmin ?? false;
+        
+        await fetch(`https://api-smartflo.tatateleservices.com/v1/my_number/${selectedNumber}`, {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            destination: `agent||${data.data.agent_id}`,
+          }),
+        });
+
+        // Update user_for_cdr - only for non-admins
+        if (!isAdmin) {
+          await fetch(`https://api-smartflo.tatateleservices.com/v1/user/${data.data.id}`, {
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_for_cdr: {
+                type: "agent",
+                value: [data.data.agent_id],
+              },
+            }),
+          });
+        }
+
+        toast.success('Smartflo enabled successfully');
+        router.refresh();
+        setShowSmartfloModal(false);
+        setSmartfloNumbers([]);
+        setSelectedNumber("");
+        onClose();
+        setSmartfloNumbers([]);
+        setSelectedNumber("");
+      } else {
+        toast.error('Failed to enable Smartflo');
+      }
+    } catch (error) {
+      console.error('Error enabling Smartflo:', error);
+      toast.error('Failed to enable Smartflo');
+    } finally {
+      setIsSubmittingSmartflo(false);
+    }
+  };
+
+  const handleDisableSmartflo = async () => {
+    if (!advisor.tataTeleUserId) {
+      toast.error('No Smartflo user found');
+      return;
+    }
+
+    setIsSubmittingSmartflo(true);
+
+    try {
+      const { token } = await advisorServiceApi.getSmartfloToken();
+
+      const response = await fetch(`https://api-smartflo.tatateleservices.com/v1/user/${advisor.tataTeleUserId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        await advisorServiceApi.clearSmartflo(advisor.id);
+        toast.success('Smartflo disabled successfully');
+        router.refresh();
+        setShowDeleteSmartfloModal(false);
+        onClose();
+      } else {
+        toast.error('Failed to disable Smartflo');
+      }
+    } catch (error) {
+      console.error('Error disabling Smartflo:', error);
+      toast.error('Failed to disable Smartflo');
+    } finally {
+      setIsSubmittingSmartflo(false);
     }
   };
 
@@ -523,6 +713,52 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
             </div>
           </div>
 
+          {/* Smartflo Section */}
+          <div className="border-t dark:border-gray-700 pt-4 mt-4">
+            <Label>Smartflo</Label>
+            {advisor.agentId && advisor.smartfloId ? (
+              <div className="flex items-center justify-between mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200">
+                <div>
+                  <p className="text-sm font-medium text-green-700 dark:text-green-300">Smartflo Enabled</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Agent ID: {advisor.agentId}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteSmartfloModal(true)}
+                  className="px-3 py-1.5 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700"
+                >
+                  Disable
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Smartflo Not Enabled</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Click Enable to set up Smartflo</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLoadingSmartflo(true);
+                    setShowSmartfloModal(true);
+                    advisorServiceApi.getSmartfloToken().then(({ token }) => {
+                      fetchSmartfloNumbers(token);
+                    }).catch(() => {
+                      toast.error('Failed to get Smartflo token');
+                      setShowSmartfloModal(false);
+                    }).finally(() => {
+                      setIsLoadingSmartflo(false);
+                    });
+                  }}
+                  disabled={isLoadingSmartflo}
+                  className="px-3 py-1.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-green-400"
+                >
+                  {isLoadingSmartflo ? 'Loading...' : 'Enable'}
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="border-t dark:border-gray-700 pt-4 mt-4">
             <Label>Map Users to Advisor(s)</Label>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
@@ -578,6 +814,79 @@ export default function EditAdvisor({ isOpen, onClose, advisor }: EditAdvisorPro
                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-400"
                   >
                     {isMappingUsers ? 'Mapping...' : 'Confirm & Map'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Smartflo Enable Modal */}
+          {showSmartfloModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4 dark:text-white">Enable Smartflo</h3>
+                <div>
+                  <Label htmlFor="smartfloNumber">Select Phone Number</Label>
+                  <select
+                    id="smartfloNumber"
+                    value={selectedNumber}
+                    onChange={(e) => setSelectedNumber(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 bg-transparent py-2.5 px-4 text-sm text-gray-800 focus:border-blue-500 focus:outline-none dark:border-gray-700 dark:text-white/90"
+                  >
+                    <option value="">Select phone number</option>
+                    {smartfloNumbers.map((num) => (
+                      <option key={num.id} value={num.id}>{num.did}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowSmartfloModal(false);
+                      setSmartfloNumbers([]);
+                      setSelectedNumber("");
+                    }}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-600 dark:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleEnableSmartflo}
+                    disabled={isSubmittingSmartflo || !selectedNumber}
+                    className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-green-400"
+                  >
+                    {isSubmittingSmartflo ? 'Enabling...' : 'Enable'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Smartflo Disable Modal */}
+          {showDeleteSmartfloModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl max-w-md">
+                <h3 className="text-lg font-semibold mb-2 dark:text-white">Disable Smartflo</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  Are you sure you want to disable Smartflo for {advisor.name}?
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteSmartfloModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-600 dark:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDisableSmartflo}
+                    disabled={isSubmittingSmartflo}
+                    className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-red-400"
+                  >
+                    {isSubmittingSmartflo ? 'Disabling...' : 'Disable'}
                   </button>
                 </div>
               </div>
